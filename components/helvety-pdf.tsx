@@ -353,7 +353,7 @@ export function HelvetyPdf() {
       }
 
       const pdfBytes = await newPdf.save()
-      const blob = new Blob([pdfBytes], { type: "application/pdf" })
+      const blob = new Blob([pdfBytes as BlobPart], { type: "application/pdf" })
 
       const baseName = file.file.name.replace(/\.pdf$/i, "")
       const dateStr = formatTimestamp()
