@@ -47,7 +47,7 @@ export function HelvetyPdf() {
     const stored = localStorage.getItem("helvety-pdf-columns")
     if (stored) {
       const parsed = parseInt(stored, 10)
-      if (!isNaN(parsed) && parsed >= 2 && parsed <= 10) {
+      if (!isNaN(parsed) && parsed >= 2 && parsed <= 6) {
         setColumns(parsed)
         return
       }

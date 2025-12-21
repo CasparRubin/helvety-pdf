@@ -165,7 +165,7 @@ export function PdfToolkit({
               <Slider
                 id="column-slider"
                 min={3}
-                max={10}
+                max={6}
                 step={1}
                 value={[columns]}
                 onValueChange={(value) => onColumnsChange(value[0])}
