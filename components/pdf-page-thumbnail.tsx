@@ -1,0 +1,194 @@
+"use client"
+
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { FileTextIcon, AlertCircle } from "lucide-react"
+import dynamic from "next/dynamic"
+
+// Dynamically import react-pdf to avoid SSR issues
+const Document = dynamic(
+  () => import("react-pdf").then((mod) => mod.Document),
+  { ssr: false }
+)
+const Page = dynamic(
+  () => import("react-pdf").then((mod) => mod.Page),
+  { ssr: false }
+)
+
+// Track if worker has been initialized (module-level flag)
+let workerInitialized = false
+let workerInitializing = false
+
+interface PdfPageThumbnailProps {
+  fileUrl: string
+  pageNumber: number
+  className?: string
+  rotation?: number
+  pdfColor?: string
+  pdfFileName?: string
+  finalPageNumber?: number | null
+}
+
+export function PdfPageThumbnail({ 
+  fileUrl, 
+  pageNumber, 
+  className, 
+  rotation,
+  pdfColor,
+  pdfFileName,
+  finalPageNumber
+}: PdfPageThumbnailProps) {
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState(false)
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
+  const [documentReady, setDocumentReady] = React.useState(false)
+  const [workerReady, setWorkerReady] = React.useState(workerInitialized)
+
+  // Set up PDF.js worker once on client side (shared across all instances)
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && !workerInitialized && !workerInitializing) {
+      workerInitializing = true
+      import("react-pdf").then((mod) => {
+        // Use local worker file from public folder (version matches react-pdf's pdfjs-dist)
+        mod.pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
+        // Wait a bit to ensure worker is fully initialized
+        setTimeout(() => {
+          workerInitialized = true
+          workerInitializing = false
+          setWorkerReady(true)
+        }, 100)
+      }).catch((err) => {
+        console.error("Failed to initialize PDF worker:", err)
+        setError(true)
+        setErrorMessage("Unable to load PDF viewer. Please refresh the page and try again.")
+        workerInitializing = false
+      })
+    } else if (workerInitialized) {
+      setWorkerReady(true)
+    }
+  }, [])
+
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+    setLoading(false)
+    setError(false)
+    setErrorMessage(null)
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    // Add a delay to ensure worker message handler is fully initialized
+    // This prevents "messageHandler is null" errors
+    timeoutRef.current = setTimeout(() => {
+      setDocumentReady(true)
+      timeoutRef.current = null
+    }, 300)
+  }
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
+
+  function onDocumentLoadError(error: Error) {
+    console.error("PDF load error:", error)
+    setLoading(false)
+    setError(true)
+    setDocumentReady(false)
+    
+    const errorMessageLower = error.message.toLowerCase()
+    if (errorMessageLower.includes("password") || errorMessageLower.includes("encrypted")) {
+      setErrorMessage("Password-protected")
+    } else if (errorMessageLower.includes("corrupt") || errorMessageLower.includes("invalid")) {
+      setErrorMessage("Corrupted")
+    } else {
+      setErrorMessage("Unable to load")
+    }
+  }
+
+  return (
+    <div className={cn("relative flex flex-col items-center gap-2", className)}>
+      <div 
+        className={cn(
+          "relative w-full aspect-[3/4] bg-muted overflow-hidden border border-border flex items-center justify-center"
+        )}
+      >
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        )}
+        {error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
+            <AlertCircle className="h-8 w-8 text-destructive" aria-hidden="true" />
+            {errorMessage && (
+              <p className="text-xs text-destructive text-center px-2 max-w-full break-words">
+                {errorMessage}
+              </p>
+            )}
+            {!errorMessage && (
+              <FileTextIcon className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+            )}
+          </div>
+        )}
+        {!error && fileUrl && workerReady ? (
+          <Document
+            key={fileUrl}
+            file={fileUrl}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={onDocumentLoadError}
+            loading={null}
+            className="w-full h-full"
+            error={
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
+                <AlertCircle className="h-8 w-8 text-destructive" aria-hidden="true" />
+                <p className="text-xs text-destructive text-center px-2 max-w-full break-words">
+                  Unable to load PDF
+                </p>
+              </div>
+            }
+          >
+            {documentReady && workerReady && (
+              <Page
+                pageNumber={pageNumber}
+                width={400}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                rotate={rotation}
+                className="!scale-100"
+                onRenderError={(error) => {
+                  console.error("Page render error:", error)
+                  setError(true)
+                  setErrorMessage("Failed to render page")
+                }}
+              />
+            )}
+          </Document>
+        ) : null}
+      </div>
+      <div className="w-full text-center space-y-1">
+        {pdfFileName && (
+          <p 
+            className="text-xs truncate max-w-full font-medium" 
+            title={pdfFileName}
+            style={pdfColor ? { color: pdfColor } : undefined}
+          >
+            {pdfFileName}
+          </p>
+        )}
+        <p className="text-xs font-medium">
+          Page {pageNumber}
+          {finalPageNumber !== null && finalPageNumber !== undefined && (
+            <span className="text-muted-foreground ml-2">• Final Page: {finalPageNumber}</span>
+          )}
+        </p>
+      </div>
+    </div>
+  )
+}
+
