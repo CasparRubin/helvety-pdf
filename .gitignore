@@ -24,6 +24,16 @@ node_modules
 # misc
 .DS_Store
 *.pem
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.sublime-project
+*.sublime-workspace
 
 # debug
 npm-debug.log*

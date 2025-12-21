@@ -1,5 +1,10 @@
 # Helvety PDF
 
+![Next.js](https://img.shields.io/badge/Next.js-16.1.0-black?style=flat-square&logo=next.js)
+![React](https://img.shields.io/badge/React-19.2.3-61DAFB?style=flat-square&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)
+![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
+
 A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract pages from PDF files without any server-side processing. All file processing happens entirely in your browser.
 
 **App:** [pdf.helvety.com](https://pdf.helvety.com)
@@ -34,6 +39,49 @@ A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract 
 5. **Download** - Your processed PDF downloads automatically with a timestamped filename
 
 All steps happen entirely in your browser. No data is sent to any server.
+
+## Tech Stack
+
+This project is built with modern web technologies:
+
+- **[Next.js 16.1.0](https://nextjs.org/)** - React framework with App Router
+- **[React 19.2.3](https://react.dev/)** - UI library
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
+- **[pdf-lib](https://pdf-lib.js.org/)** - PDF manipulation and creation
+- **[pdfjs-dist](https://mozilla.github.io/pdf.js/)** - PDF rendering engine
+- **[react-pdf](https://react-pdf.org/)** - PDF viewer component
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[shadcn/ui](https://ui.shadcn.com/)** - High-quality React component library
+- **[Radix UI](https://www.radix-ui.com/)** - Unstyled, accessible component primitives
+- **[Lucide React](https://lucide.dev/)** - Icon library
+- **[next-themes](https://github.com/pacocoursey/next-themes)** - Dark mode support
+
+## Project Structure
+
+```
+helvety-pdf/
+├── app/                    # Next.js App Router
+│   ├── globals.css        # Global styles
+│   ├── layout.tsx         # Root layout component
+│   └── page.tsx           # Main page component
+├── components/            # React components
+│   ├── ui/               # shadcn/ui component library
+│   ├── navbar.tsx         # Navigation bar
+│   ├── pdf-manager.tsx    # Main PDF management component
+│   ├── pdf-page-grid.tsx  # PDF page grid layout
+│   ├── pdf-page-thumbnail.tsx  # Individual page thumbnail
+│   ├── pdf-action-buttons.tsx   # Action buttons for PDF operations
+│   ├── pdf-toolkit.tsx    # PDF toolkit utilities
+│   ├── theme-provider.tsx # Theme context provider
+│   └── theme-switcher.tsx # Dark/light mode switcher
+├── lib/                   # Utility functions
+│   ├── pdf-colors.ts      # PDF color utilities
+│   └── utils.ts           # General utility functions
+├── public/                # Static assets
+│   ├── pdf.worker.min.mjs # PDF.js worker file
+│   └── *.svg              # Logo and branding assets
+└── [config files]         # Configuration files (Next.js, TypeScript, etc.)
+```
 
 ## Developer
 
