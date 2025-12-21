@@ -44,6 +44,15 @@ export function HelvetyPdf() {
   React.useEffect(() => {
     if (typeof window === "undefined") return
 
+    const width = window.innerWidth
+    
+    // Always force 1 column on small screens (< 1231px), regardless of localStorage
+    if (width < 1231) {
+      setColumns(1)
+      return
+    }
+
+    // On large screens (>= 1231px), use localStorage if available
     const stored = localStorage.getItem("helvety-pdf-columns")
     if (stored) {
       const parsed = parseInt(stored, 10)
@@ -57,16 +66,31 @@ export function HelvetyPdf() {
     setColumns(getDefaultColumns())
   }, [])
 
-  // Handle window resize to update default if no localStorage value exists
+  // Handle window resize to update columns based on screen size
   React.useEffect(() => {
     if (typeof window === "undefined") return
 
     const handleResize = () => {
-      const stored = localStorage.getItem("helvety-pdf-columns")
-      if (!stored) {
-        // Only update if no stored value exists
-        setColumns(getDefaultColumns())
+      const width = window.innerWidth
+      
+      // Always force 1 column on small screens (< 1231px), regardless of localStorage
+      if (width < 1231) {
+        setColumns(1)
+        return
       }
+
+      // On large screens (>= 1231px), restore from localStorage if available
+      const stored = localStorage.getItem("helvety-pdf-columns")
+      if (stored) {
+        const parsed = parseInt(stored, 10)
+        if (!isNaN(parsed) && parsed >= 2 && parsed <= 6) {
+          setColumns(parsed)
+          return
+        }
+      }
+
+      // No stored value, use default based on screen size
+      setColumns(getDefaultColumns())
     }
 
     window.addEventListener("resize", handleResize)
@@ -76,7 +100,9 @@ export function HelvetyPdf() {
   // Handle column change and persist to localStorage
   const handleColumnsChange = (newColumns: number) => {
     setColumns(newColumns)
-    if (typeof window !== "undefined") {
+    // Only save to localStorage on large screens (>= 1231px)
+    // This prevents saving values that shouldn't be used on mobile
+    if (typeof window !== "undefined" && window.innerWidth >= 1231) {
       localStorage.setItem("helvety-pdf-columns", newColumns.toString())
     }
   }
