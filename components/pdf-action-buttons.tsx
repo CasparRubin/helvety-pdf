@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { X, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, GripVertical, Trash2, RefreshCw } from "lucide-react"
+import { GripVertical } from "lucide-react"
 
 interface ActionButton {
   icon: React.ReactNode

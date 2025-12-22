@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label"
 
 import { cn } from "@/lib/utils"
 import { addOklchAlpha } from "@/lib/pdf-colors"
+import { BREAKPOINTS, COLUMNS } from "@/lib/constants"
 import type { PdfFile } from "@/lib/types"
 
 interface PdfToolkitProps {
@@ -52,10 +53,10 @@ export function PdfToolkit({
 }: PdfToolkitProps) {
   const [showColumnSlider, setShowColumnSlider] = React.useState(false)
 
-  // Detect if screen width shows more than 1 column (>= 1231px)
+  // Detect if screen width shows more than 1 column (>= MULTI_COLUMN)
   React.useEffect(() => {
     const checkScreenWidth = () => {
-      setShowColumnSlider(window.innerWidth >= 1231)
+      setShowColumnSlider(window.innerWidth >= BREAKPOINTS.MULTI_COLUMN)
     }
 
     // Check on mount
@@ -164,8 +165,8 @@ export function PdfToolkit({
               </div>
               <Slider
                 id="column-slider"
-                min={3}
-                max={6}
+                min={COLUMNS.SLIDER_MIN}
+                max={COLUMNS.MAX}
                 step={1}
                 value={[columns]}
                 onValueChange={(value) => onColumnsChange(value[0])}

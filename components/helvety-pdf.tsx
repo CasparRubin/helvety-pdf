@@ -1,20 +1,21 @@
 "use client"
 
 import * as React from "react"
-import { PDFDocument, degrees } from "pdf-lib"
-import { Upload, Download, Loader2, AlertCircle, X } from "lucide-react"
+import { PDFDocument } from "pdf-lib"
+import { Upload, AlertCircle, X } from "lucide-react"
 
 import { PdfPageGrid } from "@/components/pdf-page-grid"
 import { PdfToolkit } from "@/components/pdf-toolkit"
-import { Button } from "@/components/ui/button"
 
 import { cn, formatTimestamp } from "@/lib/utils"
 import { getPdfColor } from "@/lib/pdf-colors"
+import { formatPdfError } from "@/lib/pdf-errors"
+import { downloadBlob } from "@/lib/file-download"
+import { applyPageRotation, normalizeRotation } from "@/lib/pdf-rotation"
+import { loadPdfFromFile, extractPageFromPdf } from "@/lib/pdf-utils"
+import { DELAYS } from "@/lib/constants"
+import { useColumns } from "@/hooks/use-columns"
 import type { PdfFile, UnifiedPage } from "@/lib/types"
-
-// Timeout constants (in milliseconds)
-const BLOB_URL_CLEANUP_DELAY = 100
-const ERROR_AUTO_DISMISS_DELAY = 8000
 
 export function HelvetyPdf() {
   const [pdfFiles, setPdfFiles] = React.useState<PdfFile[]>([])
@@ -25,96 +26,23 @@ export function HelvetyPdf() {
   const [isDragging, setIsDragging] = React.useState(false)
   const [isProcessing, setIsProcessing] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  const [columns, setColumns] = React.useState<number | undefined>(undefined)
+  const [columns, handleColumnsChange] = useColumns()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const errorTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  /**
+   * Generates a unique ID using timestamp and random string.
+   * @returns A unique identifier string
+   */
   const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 
-  // Get default column count based on screen size
-  const getDefaultColumns = (): number => {
-    if (typeof window === "undefined") return 2
-    const width = window.innerWidth
-    if (width >= 1655) return 3
-    if (width >= 1231) return 2
-    return 1
-  }
-
-  // Initialize columns from localStorage or default based on screen size
-  React.useEffect(() => {
-    if (typeof window === "undefined") return
-
-    const width = window.innerWidth
-    
-    // Always force 1 column on small screens (< 1231px), regardless of localStorage
-    if (width < 1231) {
-      setColumns(1)
-      return
-    }
-
-    // On large screens (>= 1231px), use localStorage if available
-    const stored = localStorage.getItem("helvety-pdf-columns")
-    if (stored) {
-      const parsed = parseInt(stored, 10)
-      if (!isNaN(parsed) && parsed >= 2 && parsed <= 6) {
-        setColumns(parsed)
-        return
-      }
-    }
-
-    // No stored value, use default based on screen size
-    setColumns(getDefaultColumns())
-  }, [])
-
-  // Handle window resize to update columns based on screen size
-  React.useEffect(() => {
-    if (typeof window === "undefined") return
-
-    const handleResize = () => {
-      const width = window.innerWidth
-      
-      // Always force 1 column on small screens (< 1231px), regardless of localStorage
-      if (width < 1231) {
-        setColumns(1)
-        return
-      }
-
-      // On large screens (>= 1231px), restore from localStorage if available
-      const stored = localStorage.getItem("helvety-pdf-columns")
-      if (stored) {
-        const parsed = parseInt(stored, 10)
-        if (!isNaN(parsed) && parsed >= 2 && parsed <= 6) {
-          setColumns(parsed)
-          return
-        }
-      }
-
-      // No stored value, use default based on screen size
-      setColumns(getDefaultColumns())
-    }
-
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
-
-  // Handle column change and persist to localStorage
-  const handleColumnsChange = (newColumns: number) => {
-    setColumns(newColumns)
-    // Only save to localStorage on large screens (>= 1231px)
-    // This prevents saving values that shouldn't be used on mobile
-    if (typeof window !== "undefined" && window.innerWidth >= 1231) {
-      localStorage.setItem("helvety-pdf-columns", newColumns.toString())
-    }
-  }
-
-  // Normalize rotation angle to 0, 90, 180, or 270
-  const normalizeRotation = (angle: number): number => {
-    let normalized = angle % 360
-    if (normalized < 0) normalized += 360
-    return Math.round(normalized / 90) * 90 % 360
-  }
-
-  // Create unified pages array from PDF files
+  /**
+   * Creates a unified pages array from PDF files, assigning sequential page numbers
+   * across all files.
+   * 
+   * @param files - Array of PDF files to process
+   * @returns Array of unified pages with sequential numbering
+   */
   const createUnifiedPages = React.useCallback((files: PdfFile[]): UnifiedPage[] => {
     const pages: UnifiedPage[] = []
     let unifiedNumber = 1
@@ -146,6 +74,18 @@ export function HelvetyPdf() {
     }
   }, [pdfFiles, createUnifiedPages])
 
+  /**
+   * Validates and adds PDF files to the application state.
+   * 
+   * Performs validation checks:
+   * - Verifies file type is PDF
+   * - Checks for duplicate files (by name and size)
+   * - Validates PDF can be loaded and has pages
+   * 
+   * Creates blob URLs for preview and assigns colors to files.
+   * 
+   * @param files - FileList or array of File objects to validate and add
+   */
   const validateAndAddFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files)
     const pdfFilesToAdd: PdfFile[] = []
@@ -166,8 +106,7 @@ export function HelvetyPdf() {
         const blob = new Blob([file], { type: "application/pdf" })
         const url = URL.createObjectURL(blob)
         
-        const arrayBuffer = await file.arrayBuffer()
-        const pdf = await PDFDocument.load(arrayBuffer)
+        const pdf = await loadPdfFromFile(file)
         const count = pdf.getPageCount()
 
         if (count === 0) {
@@ -187,17 +126,7 @@ export function HelvetyPdf() {
           color,
         })
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message.toLowerCase() : ""
-        let userMessage = `Can't load '${file.name}':`
-        
-        if (errorMessage.includes("password") || errorMessage.includes("encrypted")) {
-          userMessage += " password-protected. Remove password and try again."
-        } else if (errorMessage.includes("corrupt") || errorMessage.includes("invalid")) {
-          userMessage += " file may be corrupted. Try a different file."
-        } else {
-          userMessage += " file may be corrupted or password-protected."
-        }
-        
+        const userMessage = formatPdfError(err, `Can't load '${file.name}':`)
         validationErrors.push(userMessage)
       }
     }
@@ -322,6 +251,13 @@ export function HelvetyPdf() {
     setError(null)
   }
 
+  /**
+   * Extracts a single page from a PDF file and downloads it as a new PDF.
+   * 
+   * Applies any user-applied rotation to the extracted page.
+   * 
+   * @param unifiedPageNumber - The unified page number to extract
+   */
   const handleExtractPage = async (unifiedPageNumber: number) => {
     if (pdfFiles.length === 0 || unifiedPages.length === 0) {
       setError("No PDF files loaded.")
@@ -338,73 +274,43 @@ export function HelvetyPdf() {
     setError(null)
 
     try {
-      const arrayBuffer = await file.file.arrayBuffer()
-      const pdf = await PDFDocument.load(arrayBuffer)
-      const newPdf = await PDFDocument.create()
-
+      const pdf = await loadPdfFromFile(file.file)
       const pageIndex = page.originalPageNumber - 1
-      const [copiedPage] = await newPdf.copyPages(pdf, [pageIndex])
-      newPdf.addPage(copiedPage)
+      const newPdf = await extractPageFromPdf(pdf, pageIndex)
 
       // Apply rotation if user has rotated this page
-      // Combine original page rotation with user-applied rotation
       const rotation = pageRotations[unifiedPageNumber] || 0
       if (rotation !== 0) {
         const newPage = newPdf.getPage(0)
-        try {
-          // Get original page rotation and combine with user rotation
-          const originalPage = pdf.getPage(pageIndex)
-          const rotationObj = originalPage.getRotation()
-          const originalRotation = (rotationObj !== null && typeof rotationObj === 'object' && 'angle' in rotationObj) 
-            ? rotationObj.angle 
-            : (typeof rotationObj === 'number' ? rotationObj : 0)
-          const totalRotation = normalizeRotation(originalRotation + rotation)
-          newPage.setRotation(degrees(totalRotation))
-        } catch {
-          // If we can't read original rotation, just apply user rotation
-          newPage.setRotation(degrees(rotation))
-        }
+        const originalPage = pdf.getPage(pageIndex)
+        await applyPageRotation(originalPage, newPage, rotation)
       }
 
       const pdfBytes = await newPdf.save()
-      const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" })
+      const blob = new Blob([pdfBytes], { type: "application/pdf" })
 
       const baseName = file.file.name.replace(/\.pdf$/i, "")
       const dateStr = formatTimestamp()
       const filename = `${baseName}_page${page.originalPageNumber}_${dateStr}.pdf`
 
-      const blobUrl = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = blobUrl
-      link.download = filename
-      link.style.display = "none"
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl)
-      }, BLOB_URL_CLEANUP_DELAY)
+      downloadBlob(blob, filename, DELAYS.BLOB_URL_CLEANUP)
 
       setError(null)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message.toLowerCase() : ""
-      let userMessage = `Can't extract page:`
-      
-      if (errorMessage.includes("password") || errorMessage.includes("encrypted")) {
-        userMessage += " password-protected. Remove password and try again."
-      } else if (errorMessage.includes("corrupt") || errorMessage.includes("invalid")) {
-        userMessage += " file may be corrupted. Try a different file."
-      } else {
-        userMessage += " file may be corrupted or password-protected."
-      }
-      
+      const userMessage = formatPdfError(err, "Can't extract page:")
       setError(userMessage)
     } finally {
       setIsProcessing(false)
     }
   }
 
+  /**
+   * Merges all active (non-deleted) pages from all PDF files into a single PDF
+   * and downloads it.
+   * 
+   * Pages are merged in the order specified by pageOrder, excluding deleted pages.
+   * User-applied rotations are preserved in the merged PDF.
+   */
   const handleDownload = async () => {
     if (pdfFiles.length === 0 || unifiedPages.length === 0) {
       setError("Add at least one PDF file to download.")
@@ -432,65 +338,31 @@ export function HelvetyPdf() {
         if (!file) continue
 
         try {
-          const arrayBuffer = await file.file.arrayBuffer()
-          const pdf = await PDFDocument.load(arrayBuffer)
+          const pdf = await loadPdfFromFile(file.file)
           const pageIndex = page.originalPageNumber - 1
           const [copiedPage] = await mergedPdf.copyPages(pdf, [pageIndex])
           mergedPdf.addPage(copiedPage)
 
           // Apply rotation if user has rotated this page
-          // Combine original page rotation with user-applied rotation
           const rotation = pageRotations[unifiedPageNum] || 0
           if (rotation !== 0) {
             const newPage = mergedPdf.getPage(mergedPdf.getPageCount() - 1)
-            try {
-              // Get original page rotation and combine with user rotation
-              const originalPage = pdf.getPage(pageIndex)
-              const rotationObj = originalPage.getRotation()
-              const originalRotation = (rotationObj !== null && typeof rotationObj === 'object' && 'angle' in rotationObj) 
-                ? rotationObj.angle 
-                : (typeof rotationObj === 'number' ? rotationObj : 0)
-              const totalRotation = normalizeRotation(originalRotation + rotation)
-              newPage.setRotation(degrees(totalRotation))
-            } catch {
-              // If we can't read original rotation, just apply user rotation
-              newPage.setRotation(degrees(rotation))
-            }
+            const originalPage = pdf.getPage(pageIndex)
+            await applyPageRotation(originalPage, newPage, rotation)
           }
         } catch (err) {
-          const errorMessage = err instanceof Error ? err.message.toLowerCase() : ""
-          let userMessage = `Can't process page from '${file.file.name}':`
-          
-          if (errorMessage.includes("password") || errorMessage.includes("encrypted")) {
-            userMessage += " password-protected. Remove password and try again."
-          } else if (errorMessage.includes("corrupt") || errorMessage.includes("invalid")) {
-            userMessage += " file may be corrupted. Try a different file."
-          } else {
-            userMessage += " file may be corrupted or password-protected."
-          }
-          
+          const userMessage = formatPdfError(err, `Can't process page from '${file.file.name}':`)
           throw new Error(userMessage)
         }
       }
 
       const pdfBytes = await mergedPdf.save()
-      const blob = new Blob([pdfBytes as BlobPart], { type: "application/pdf" })
+      const blob = new Blob([pdfBytes], { type: "application/pdf" })
 
       const dateStr = formatTimestamp()
       const filename = `helvety-pdf_${dateStr}.pdf`
 
-      const blobUrl = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = blobUrl
-      link.download = filename
-      link.style.display = "none"
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl)
-      }, BLOB_URL_CLEANUP_DELAY)
+      downloadBlob(blob, filename, DELAYS.BLOB_URL_CLEANUP)
 
       setError(null)
     } catch (err) {
@@ -511,8 +383,10 @@ export function HelvetyPdf() {
     }
   }
 
-  // Auto-dismiss non-critical errors after a delay
-  // Critical errors (file loading/processing failures) remain visible until dismissed
+  /**
+   * Auto-dismisses non-critical errors after a delay.
+   * Critical errors (file loading/processing failures) remain visible until manually dismissed.
+   */
   React.useEffect(() => {
     if (error && !isProcessing) {
       const isCriticalError = error.includes("Can't process") || error.includes("Can't load") || error.includes("Can't extract") || error.includes("Download failed")
@@ -520,7 +394,7 @@ export function HelvetyPdf() {
       if (!isCriticalError) {
         errorTimeoutRef.current = setTimeout(() => {
           setError(null)
-        }, ERROR_AUTO_DISMISS_DELAY)
+        }, DELAYS.ERROR_AUTO_DISMISS)
       }
 
       return () => {

@@ -28,7 +28,7 @@ A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract 
 - **Page extraction** - Extract individual pages as separate PDF files
 - **Multi-file merging** - Combine multiple PDF files into one
 - **Drag & drop upload** - Intuitive file upload interface
-- **Customizable grid layout** - Adjust pages per row (2-10) for optimal viewing
+- **Customizable grid layout** - Adjust pages per row (3-6) for optimal viewing
 - **Dark mode support** - Comfortable viewing in any lighting condition
 
 ## How It Works
@@ -63,8 +63,11 @@ This project is built with modern web technologies:
 helvety-pdf/
 ├── app/                    # Next.js App Router
 │   ├── globals.css        # Global styles
+│   ├── icon.svg           # App icon
 │   ├── layout.tsx         # Root layout component
-│   └── page.tsx           # Main page component
+│   ├── page.tsx           # Main page component
+│   ├── robots.ts          # Robots.txt configuration
+│   └── sitemap.ts         # Sitemap configuration
 ├── components/            # React components
 │   ├── ui/               # shadcn/ui component library
 │   ├── navbar.tsx         # Navigation bar
@@ -75,8 +78,16 @@ helvety-pdf/
 │   ├── pdf-toolkit.tsx    # PDF toolkit utilities
 │   ├── theme-provider.tsx # Theme context provider
 │   └── theme-switcher.tsx # Dark/light mode switcher
+├── hooks/                 # Custom React hooks
+│   └── use-columns.ts     # Column layout management hook
 ├── lib/                   # Utility functions
+│   ├── constants.ts       # Application constants
+│   ├── file-download.ts   # File download utilities
 │   ├── pdf-colors.ts      # PDF color utilities
+│   ├── pdf-errors.ts      # PDF error formatting
+│   ├── pdf-rotation.ts    # PDF page rotation utilities
+│   ├── pdf-utils.ts       # PDF loading and extraction
+│   ├── types.ts           # TypeScript type definitions
 │   └── utils.ts           # General utility functions
 ├── public/                # Static assets
 │   ├── pdf.worker.min.mjs # PDF.js worker file

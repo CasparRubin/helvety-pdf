@@ -23,6 +23,42 @@ const RENDER_RETRY_DELAY = 1000
 // Shared Promise for worker initialization (resolves when worker is ready)
 let workerInitPromise: Promise<void> | null = null
 
+// Error Boundary component to catch render-time errors
+class PageErrorBoundary extends React.Component<
+  { children: React.ReactNode; onError: () => void; retryKey: number },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; onError: () => void; retryKey: number }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error) {
+    const errorMessage = error?.message || String(error)
+    if (errorMessage.includes("messageHandler") || errorMessage.includes("sendWithPromise")) {
+      this.props.onError()
+    }
+  }
+
+  componentDidUpdate(prevProps: { retryKey: number }) {
+    // Reset error state when retry key changes (indicating a retry)
+    if (prevProps.retryKey !== this.props.retryKey && this.state.hasError) {
+      this.setState({ hasError: false })
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null
+    }
+    return this.props.children
+  }
+}
+
 interface PdfPageThumbnailProps {
   fileUrl: string
   pageNumber: number
@@ -46,9 +82,11 @@ export function PdfPageThumbnail({
   const [error, setError] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const [documentReady, setDocumentReady] = React.useState(false)
+  const [pageRenderReady, setPageRenderReady] = React.useState(false)
   const [workerReady, setWorkerReady] = React.useState(false)
   const [pageWidth, setPageWidth] = React.useState<number>(400)
   const containerRef = React.useRef<HTMLDivElement>(null)
+  const renderRetryCountRef = React.useRef(0)
 
   // Initialize PDF.js worker once on client side (shared across all instances)
   // Returns a Promise that resolves when the worker is ready
@@ -106,6 +144,20 @@ export function PdfPageThumbnail({
     }
   }, [initializeWorker])
 
+  // Reset states when fileUrl changes (new file loaded)
+  React.useEffect(() => {
+    setLoading(true)
+    setError(false)
+    setErrorMessage(null)
+    setDocumentReady(false)
+    setPageRenderReady(false)
+    renderRetryCountRef.current = 0
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+  }, [fileUrl])
+
   // Measure container width and update page width dynamically
   // This ensures PDF pages always display at full width regardless of column count,
   // with height automatically adjusting to maintain proper aspect ratio
@@ -159,6 +211,7 @@ export function PdfPageThumbnail({
     setLoading(false)
     setError(false)
     setErrorMessage(null)
+    renderRetryCountRef.current = 0
     // Clear any existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
@@ -168,7 +221,11 @@ export function PdfPageThumbnail({
     // the page tries to render before the worker is fully ready
     timeoutRef.current = setTimeout(() => {
       setDocumentReady(true)
-      timeoutRef.current = null
+      // Add an additional delay before allowing page render to ensure messageHandler is ready
+      setTimeout(() => {
+        setPageRenderReady(true)
+        timeoutRef.current = null
+      }, 200)
     }, DOCUMENT_READY_DELAY)
   }
 
@@ -186,6 +243,7 @@ export function PdfPageThumbnail({
     setLoading(false)
     setError(true)
     setDocumentReady(false)
+    setPageRenderReady(false)
     
     const errorMessageLower = error.message.toLowerCase()
     if (errorMessageLower.includes("password") || errorMessageLower.includes("encrypted")) {
@@ -202,7 +260,7 @@ export function PdfPageThumbnail({
       <div 
         ref={containerRef}
         className={cn(
-          "relative w-full min-h-0 flex items-center justify-center"
+          "relative w-full min-h-[200px] flex items-center justify-center"
         )}
       >
         {loading && (
@@ -240,37 +298,59 @@ export function PdfPageThumbnail({
               </div>
             }
           >
-            {documentReady && workerReady && (
-              <Page
-                key={`${pageNumber}-${pageWidth}-${rotation || 0}`}
-                pageNumber={pageNumber}
-                width={pageWidth}
-                renderTextLayer={false}
-                renderAnnotationLayer={false}
-                rotate={rotation}
-                className="!scale-100"
-                onRenderError={(error) => {
-                  console.error("Page render error:", error)
-                  // Check if it's a messageHandler error - if so, retry after a delay
-                  // This handles race conditions where the worker isn't fully ready
-                  const errorMessage = error?.message || String(error)
-                  if (errorMessage.includes("messageHandler") || errorMessage.includes("sendWithPromise")) {
-                    // Reset documentReady and retry after a longer delay
-                    setDocumentReady(false)
+            {documentReady && pageRenderReady && workerReady && (
+              <PageErrorBoundary
+                retryKey={renderRetryCountRef.current}
+                onError={() => {
+                  // Handle messageHandler errors caught by error boundary
+                  if (renderRetryCountRef.current < 3) {
+                    setPageRenderReady(false)
+                    renderRetryCountRef.current += 1
                     if (timeoutRef.current) {
                       clearTimeout(timeoutRef.current)
                     }
                     timeoutRef.current = setTimeout(() => {
-                      setDocumentReady(true)
+                      setPageRenderReady(true)
                       timeoutRef.current = null
-                    }, RENDER_RETRY_DELAY)
+                    }, RENDER_RETRY_DELAY * (renderRetryCountRef.current + 1))
                   } else {
-                    // For other errors, show error state
                     setError(true)
                     setErrorMessage("Failed to render page")
                   }
                 }}
-              />
+              >
+                <Page
+                  key={`${pageNumber}-${pageWidth}-${rotation || 0}-${renderRetryCountRef.current}`}
+                  pageNumber={pageNumber}
+                  width={pageWidth}
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                  rotate={rotation}
+                  className="!scale-100"
+                  onRenderError={(error) => {
+                    console.error("Page render error:", error)
+                    // Check if it's a messageHandler error - if so, retry after a delay
+                    // This handles race conditions where the worker isn't fully ready
+                    const errorMessage = error?.message || String(error)
+                    if ((errorMessage.includes("messageHandler") || errorMessage.includes("sendWithPromise")) && renderRetryCountRef.current < 3) {
+                      // Reset states and retry after a longer delay
+                      setPageRenderReady(false)
+                      renderRetryCountRef.current += 1
+                      if (timeoutRef.current) {
+                        clearTimeout(timeoutRef.current)
+                      }
+                      timeoutRef.current = setTimeout(() => {
+                        setPageRenderReady(true)
+                        timeoutRef.current = null
+                      }, RENDER_RETRY_DELAY * (renderRetryCountRef.current + 1))
+                    } else {
+                      // For other errors or after max retries, show error state
+                      setError(true)
+                      setErrorMessage("Failed to render page")
+                    }
+                  }}
+                />
+              </PageErrorBoundary>
             )}
           </Document>
         ) : null}

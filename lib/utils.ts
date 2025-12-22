@@ -1,10 +1,22 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+/**
+ * Merges Tailwind CSS class names, resolving conflicts intelligently.
+ * 
+ * @param inputs - Class values to merge (strings, objects, arrays, etc.)
+ * @returns Merged class name string
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Formats the current date and time as a timestamp string.
+ * Format: YYYYMMDD-HHMMSS
+ * 
+ * @returns Timestamp string (e.g., "20240115-143022")
+ */
 export function formatTimestamp(): string {
   const now = new Date()
   const year = now.getFullYear()
