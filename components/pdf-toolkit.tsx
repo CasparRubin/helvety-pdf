@@ -72,7 +72,7 @@ export function PdfToolkit({
       "flex-col gap-6",
       "lg:sticky lg:top-24 lg:self-start",
       "lg:h-[calc(100vh-8rem)]",
-      "order-last lg:order-none"
+      "order-first lg:order-none"
     )}>
       <div className={cn(
         "bg-muted/30 border border-border/50 p-4 lg:p-6",
@@ -176,7 +176,7 @@ export function PdfToolkit({
         )}
 
         {/* Statistics */}
-        {pdfFiles.length > 0 && (
+        {pdfFiles.length > 0 && columns !== 1 && (
           <div className="space-y-3">
             <h3 className="text-sm font-semibold">Statistics</h3>
             <div className="space-y-2 text-sm">

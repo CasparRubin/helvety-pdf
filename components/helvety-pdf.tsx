@@ -569,10 +569,10 @@ export function HelvetyPdf() {
                 <Upload className="h-12 w-12 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">
-                    Drag and drop PDF files here
+                    Drag and drop one or more PDF files here
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Use the panel on the right to add files
+                    Or use the panel {columns === 1 ? "on the top" : "on the right"} to add your files
                   </p>
                 </div>
               </div>
