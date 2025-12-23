@@ -73,7 +73,7 @@ export function Navbar() {
                 priority
               />
             </a>
-            <Link href="/" className="text-xl font-semibold tracking-tight hover:opacity-80 transition-opacity">
+            <Link href="/" className="text-xl font-black tracking-tight hover:opacity-80 transition-opacity">
               PDF
             </Link>
           </div>
