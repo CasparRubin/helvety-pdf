@@ -29,12 +29,30 @@ export function HelvetyPdf() {
   const [columns, handleColumnsChange] = useColumns()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const errorTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pdfCacheRef = React.useRef<Map<string, PDFDocument>>(new Map())
 
   /**
    * Generates a unique ID using timestamp and random string.
    * @returns A unique identifier string
    */
   const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+
+  /**
+   * Gets a cached PDF document or loads it if not in cache.
+   * Caches the loaded PDF for future use to avoid redundant loading operations.
+   * 
+   * @param fileId - The unique identifier of the PDF file
+   * @param file - The File object to load if not cached
+   * @returns A promise that resolves to the PDFDocument
+   */
+  const getCachedPdf = React.useCallback(async (fileId: string, file: File): Promise<PDFDocument> => {
+    if (pdfCacheRef.current.has(fileId)) {
+      return pdfCacheRef.current.get(fileId)!
+    }
+    const pdf = await loadPdfFromFile(file)
+    pdfCacheRef.current.set(fileId, pdf)
+    return pdf
+  }, [])
 
   /**
    * Creates a unified pages array from PDF files, assigning sequential page numbers
@@ -190,6 +208,8 @@ export function HelvetyPdf() {
     if (file) {
       URL.revokeObjectURL(file.url)
     }
+    // Clear PDF from cache
+    pdfCacheRef.current.delete(fileId)
     setPdfFiles((prev) => prev.filter((f) => f.id !== fileId))
     // Reset all page-related state when files change
     setDeletedPages(new Set())
@@ -202,6 +222,8 @@ export function HelvetyPdf() {
     pdfFiles.forEach(file => {
       URL.revokeObjectURL(file.url)
     })
+    // Clear PDF cache
+    pdfCacheRef.current.clear()
     setPdfFiles([])
     setUnifiedPages([])
     setPageOrder([])
@@ -274,7 +296,7 @@ export function HelvetyPdf() {
     setError(null)
 
     try {
-      const pdf = await loadPdfFromFile(file.file)
+      const pdf = await getCachedPdf(file.id, file.file)
       const pageIndex = page.originalPageNumber - 1
       const newPdf = await extractPageFromPdf(pdf, pageIndex)
 
@@ -330,29 +352,48 @@ export function HelvetyPdf() {
       // Create single merged PDF
       const mergedPdf = await PDFDocument.create()
 
-      for (const unifiedPageNum of activePages) {
-        const page = unifiedPages.find(p => p.unifiedPageNumber === unifiedPageNum)
-        if (!page) continue
+      // Process pages in batches to prevent UI blocking
+      const BATCH_SIZE = 5
+      for (let i = 0; i < activePages.length; i += BATCH_SIZE) {
+        const batch = activePages.slice(i, i + BATCH_SIZE)
+        
+        await Promise.all(
+          batch.map(async (unifiedPageNum) => {
+            const page = unifiedPages.find(p => p.unifiedPageNumber === unifiedPageNum)
+            if (!page) return
 
-        const file = pdfFiles.find(f => f.id === page.fileId)
-        if (!file) continue
+            const file = pdfFiles.find(f => f.id === page.fileId)
+            if (!file) return
 
-        try {
-          const pdf = await loadPdfFromFile(file.file)
-          const pageIndex = page.originalPageNumber - 1
-          const [copiedPage] = await mergedPdf.copyPages(pdf, [pageIndex])
-          mergedPdf.addPage(copiedPage)
+            try {
+              const pdf = await getCachedPdf(file.id, file.file)
+              const pageIndex = page.originalPageNumber - 1
+              const [copiedPage] = await mergedPdf.copyPages(pdf, [pageIndex])
+              mergedPdf.addPage(copiedPage)
 
-          // Apply rotation if user has rotated this page
-          const rotation = pageRotations[unifiedPageNum] || 0
-          if (rotation !== 0) {
-            const newPage = mergedPdf.getPage(mergedPdf.getPageCount() - 1)
-            const originalPage = pdf.getPage(pageIndex)
-            await applyPageRotation(originalPage, newPage, rotation)
-          }
-        } catch (err) {
-          const userMessage = formatPdfError(err, `Can't process page from '${file.file.name}':`)
-          throw new Error(userMessage)
+              // Apply rotation if user has rotated this page
+              const rotation = pageRotations[unifiedPageNum] || 0
+              if (rotation !== 0) {
+                const newPage = mergedPdf.getPage(mergedPdf.getPageCount() - 1)
+                const originalPage = pdf.getPage(pageIndex)
+                await applyPageRotation(originalPage, newPage, rotation)
+              }
+            } catch (err) {
+              const userMessage = formatPdfError(err, `Can't process page from '${file.file.name}':`)
+              throw new Error(userMessage)
+            }
+          })
+        )
+
+        // Yield to browser between batches to prevent UI blocking
+        if (i + BATCH_SIZE < activePages.length) {
+          await new Promise<void>((resolve) => {
+            if ('requestIdleCallback' in window) {
+              requestIdleCallback(() => resolve(), { timeout: 100 })
+            } else {
+              setTimeout(() => resolve(), 0)
+            }
+          })
         }
       }
 
@@ -404,6 +445,18 @@ export function HelvetyPdf() {
       }
     }
   }, [error, isProcessing])
+
+  // Cleanup effect: revoke blob URLs and clear PDF cache on unmount
+  React.useEffect(() => {
+    return () => {
+      // Clean up all blob URLs
+      pdfFiles.forEach(file => {
+        URL.revokeObjectURL(file.url)
+      })
+      // Clear PDF cache
+      pdfCacheRef.current.clear()
+    }
+  }, [pdfFiles])
 
   return (
     <div 
