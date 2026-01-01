@@ -279,6 +279,7 @@ export function PdfPageGrid({
                 pdfFileName={fileInfo?.file.name}
                 finalPageNumber={finalPageNumber}
                 fileType={fileInfo?.type}
+                totalPages={pageOrder.length}
               />
               <div className="mt-2 flex flex-wrap justify-center gap-1">
                 {isDeleted && (

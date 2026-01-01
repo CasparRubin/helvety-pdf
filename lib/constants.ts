@@ -48,3 +48,61 @@ export const STORAGE_KEYS = {
   COLUMNS: "helvety-pdf-columns",
 } as const
 
+/**
+ * Thumbnail quality configuration
+ */
+export const THUMBNAIL_QUALITY = {
+  /** Device pixel ratio for mobile screens (< 768px) */
+  MOBILE_DPR: 0.75,
+  /** Device pixel ratio for tablet screens (768px - 1230px) */
+  TABLET_DPR: 1.0,
+  /** Device pixel ratio for desktop screens (≥ 1230px) */
+  DESKTOP_DPR: 1.25,
+  /** Maximum device pixel ratio (cap) */
+  MAX_DPR: 1.5,
+  /** Minimum device pixel ratio */
+  MIN_DPR: 0.5,
+} as const
+
+/**
+ * Thumbnail dimension limits
+ */
+export const THUMBNAIL_DIMENSIONS = {
+  /** Maximum thumbnail width in pixels */
+  MAX_WIDTH: 800,
+  /** Minimum thumbnail width in pixels */
+  MIN_WIDTH: 100,
+} as const
+
+/**
+ * Intersection Observer configuration
+ */
+export const INTERSECTION_OBSERVER = {
+  /** Root margin for loading thumbnails (start loading before visible) */
+  LOAD_MARGIN: "200px",
+  /** Root margin for unloading thumbnails (unload when far from viewport) */
+  UNLOAD_MARGIN: "-100px",
+  /** Threshold for intersection detection */
+  THRESHOLD: 0.01,
+} as const
+
+/**
+ * Progressive quality loading delays
+ */
+export const QUALITY_UPGRADE = {
+  /** Delay before upgrading quality after initial render (ms) */
+  DELAY: 1000,
+  /** Delay after scroll stops before upgrading quality (ms) */
+  SCROLL_DEBOUNCE: 500,
+} as const
+
+/**
+ * Screen size breakpoints for quality calculation
+ */
+export const SCREEN_BREAKPOINTS = {
+  /** Mobile breakpoint (below this is mobile) */
+  MOBILE: 768,
+  /** Tablet breakpoint (below this is tablet, above is desktop) */
+  TABLET: 1230,
+} as const
+

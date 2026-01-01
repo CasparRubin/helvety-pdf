@@ -4,6 +4,13 @@ import * as React from "react"
 import { cn, debounce } from "@/lib/utils"
 import { FileTextIcon, AlertCircle } from "lucide-react"
 import dynamic from "next/dynamic"
+import { useScreenSize } from "@/hooks/use-screen-size"
+import { 
+  THUMBNAIL_QUALITY, 
+  THUMBNAIL_DIMENSIONS, 
+  INTERSECTION_OBSERVER,
+  QUALITY_UPGRADE 
+} from "@/lib/constants"
 
 // Dynamically import react-pdf to avoid SSR issues
 const Document = dynamic(
@@ -68,6 +75,7 @@ interface PdfPageThumbnailProps {
   pdfFileName?: string
   finalPageNumber?: number | null
   fileType?: 'pdf' | 'image'
+  totalPages?: number
 }
 
 export function PdfPageThumbnail({ 
@@ -78,7 +86,8 @@ export function PdfPageThumbnail({
   pdfColor,
   pdfFileName,
   finalPageNumber,
-  fileType
+  fileType,
+  totalPages = 1
 }: PdfPageThumbnailProps) {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState(false)
@@ -88,9 +97,46 @@ export function PdfPageThumbnail({
   const [workerReady, setWorkerReady] = React.useState(false)
   const [pageWidth, setPageWidth] = React.useState<number>(400)
   const [isVisible, setIsVisible] = React.useState(false)
+  const [shouldUnmount, setShouldUnmount] = React.useState(false)
+  const [devicePixelRatio, setDevicePixelRatio] = React.useState(1.0)
+  const [isHighQuality, setIsHighQuality] = React.useState(false)
   const containerRef = React.useRef<HTMLDivElement>(null)
   const thumbnailRef = React.useRef<HTMLDivElement>(null)
   const renderRetryCountRef = React.useRef(0)
+  const qualityUpgradeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const qualityUpgradeIdleCallbackRef = React.useRef<number | null>(null)
+  const { screenSize } = useScreenSize()
+
+  /**
+   * Calculates optimal device pixel ratio based on screen size, container width, and total pages.
+   * Reduces quality on smaller screens and when many pages are loaded to save memory.
+   */
+  const calculateOptimalDPR = React.useCallback((containerWidth: number): number => {
+    // Base DPR from screen size
+    let baseDPR: number
+    if (screenSize === "mobile") {
+      baseDPR = THUMBNAIL_QUALITY.MOBILE_DPR
+    } else if (screenSize === "tablet") {
+      baseDPR = THUMBNAIL_QUALITY.TABLET_DPR
+    } else {
+      baseDPR = THUMBNAIL_QUALITY.DESKTOP_DPR
+    }
+
+    // Reduce further if many pages (memory pressure)
+    if (totalPages > 50) baseDPR *= 0.9
+    if (totalPages > 100) baseDPR *= 0.85
+    if (totalPages > 200) baseDPR *= 0.8
+
+    // Reduce slightly for smaller containers
+    if (containerWidth < 300) baseDPR *= 0.9
+    if (containerWidth < 200) baseDPR *= 0.85
+
+    // Cap at min and max
+    return Math.max(
+      THUMBNAIL_QUALITY.MIN_DPR,
+      Math.min(baseDPR, THUMBNAIL_QUALITY.MAX_DPR)
+    )
+  }, [screenSize, totalPages])
 
   // Initialize PDF.js worker once on client side (shared across all instances)
   // Returns a Promise that resolves when the worker is ready
@@ -162,14 +208,25 @@ export function PdfPageThumbnail({
     setDocumentReady(false)
     setPageRenderReady(false)
     setIsVisible(false)
+    setShouldUnmount(false)
+    setIsHighQuality(false)
     renderRetryCountRef.current = 0
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
       timeoutRef.current = null
     }
+    if (qualityUpgradeTimeoutRef.current) {
+      clearTimeout(qualityUpgradeTimeoutRef.current)
+      qualityUpgradeTimeoutRef.current = null
+    }
+    if (qualityUpgradeIdleCallbackRef.current !== null && 'cancelIdleCallback' in window) {
+      cancelIdleCallback(qualityUpgradeIdleCallbackRef.current)
+      qualityUpgradeIdleCallbackRef.current = null
+    }
   }, [fileUrl])
 
-  // Intersection Observer for lazy loading - only render when visible
+  // Intersection Observer for lazy loading and memory management
+  // Unloads thumbnails far off-screen to free memory
   React.useEffect(() => {
     const element = thumbnailRef.current
     if (!element) return
@@ -178,11 +235,78 @@ export function PdfPageThumbnail({
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true)
+          setShouldUnmount(false)
+          
+          // Clear any pending quality upgrade timeout and idle callback
+          if (qualityUpgradeTimeoutRef.current) {
+            clearTimeout(qualityUpgradeTimeoutRef.current)
+            qualityUpgradeTimeoutRef.current = null
+          }
+          if (qualityUpgradeIdleCallbackRef.current !== null && 'cancelIdleCallback' in window && typeof window.cancelIdleCallback === 'function') {
+            window.cancelIdleCallback(qualityUpgradeIdleCallbackRef.current)
+            qualityUpgradeIdleCallbackRef.current = null
+          }
+          
+          // Start progressive quality loading if not already high quality
+          // Use requestIdleCallback for better performance when browser is idle
+          if (!isHighQuality && fileType !== 'image') {
+            const upgradeQuality = () => {
+              setIsHighQuality(true)
+              qualityUpgradeTimeoutRef.current = null
+              qualityUpgradeIdleCallbackRef.current = null
+            }
+            
+            if ('requestIdleCallback' in window && typeof window.requestIdleCallback === 'function') {
+              // Use requestIdleCallback if available for better performance
+              const idleCallbackId = window.requestIdleCallback(
+                () => {
+                  upgradeQuality()
+                },
+                { timeout: QUALITY_UPGRADE.DELAY }
+              )
+              qualityUpgradeIdleCallbackRef.current = idleCallbackId
+              // Fallback timeout in case idle callback doesn't fire
+              qualityUpgradeTimeoutRef.current = setTimeout(() => {
+                if (qualityUpgradeIdleCallbackRef.current !== null && 'cancelIdleCallback' in window && typeof window.cancelIdleCallback === 'function') {
+                  window.cancelIdleCallback(qualityUpgradeIdleCallbackRef.current)
+                  qualityUpgradeIdleCallbackRef.current = null
+                }
+                upgradeQuality()
+              }, QUALITY_UPGRADE.DELAY)
+            } else {
+              // Fallback to setTimeout
+              qualityUpgradeTimeoutRef.current = setTimeout(upgradeQuality, QUALITY_UPGRADE.DELAY)
+            }
+          }
+        } else {
+          // Unmount when far off-screen to free memory
+          // Calculate distance from viewport
+          const rect = entry.boundingClientRect
+          const viewportHeight = window.innerHeight
+          const viewportTop = 0
+          const viewportBottom = viewportHeight
+          
+          // Check if element is far above or below viewport
+          const isFarAbove = rect.bottom < viewportTop - 500
+          const isFarBelow = rect.top > viewportBottom + 500
+          
+          if (isFarAbove || isFarBelow) {
+            setShouldUnmount(true)
+            setIsHighQuality(false)
+            if (qualityUpgradeTimeoutRef.current) {
+              clearTimeout(qualityUpgradeTimeoutRef.current)
+              qualityUpgradeTimeoutRef.current = null
+            }
+            if (qualityUpgradeIdleCallbackRef.current !== null && 'cancelIdleCallback' in window) {
+              cancelIdleCallback(qualityUpgradeIdleCallbackRef.current)
+              qualityUpgradeIdleCallbackRef.current = null
+            }
+          }
         }
       },
       { 
-        rootMargin: '200px', // Start loading 200px before visible
-        threshold: 0.01 
+        rootMargin: INTERSECTION_OBSERVER.LOAD_MARGIN,
+        threshold: INTERSECTION_OBSERVER.THRESHOLD
       }
     )
 
@@ -190,8 +314,11 @@ export function PdfPageThumbnail({
 
     return () => {
       observer.unobserve(element)
+      if (qualityUpgradeTimeoutRef.current) {
+        clearTimeout(qualityUpgradeTimeoutRef.current)
+      }
     }
-  }, [])
+  }, [isHighQuality, fileType])
 
   // Measure container width and update page width dynamically
   // This ensures pages (PDFs and images) always display at full width regardless of column count,
@@ -211,9 +338,16 @@ export function PdfPageThumbnail({
       
       const availableWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight
       
-      // Use a minimum width to prevent issues with very small containers
-      const calculatedWidth = Math.max(availableWidth, 100)
+      // Apply min/max limits to prevent memory issues
+      const calculatedWidth = Math.max(
+        THUMBNAIL_DIMENSIONS.MIN_WIDTH,
+        Math.min(availableWidth, THUMBNAIL_DIMENSIONS.MAX_WIDTH)
+      )
       setPageWidth(calculatedWidth)
+      
+      // Update DPR when width changes
+      const optimalDPR = calculateOptimalDPR(calculatedWidth)
+      setDevicePixelRatio(optimalDPR)
     }
 
     // Initial measurement
@@ -241,7 +375,7 @@ export function PdfPageThumbnail({
         window.removeEventListener("resize", debouncedUpdateWidth)
       }
     }
-  }, [])
+  }, [calculateOptimalDPR])
 
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -333,7 +467,7 @@ export function PdfPageThumbnail({
           {!isVisible && !error && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted animate-pulse rounded" />
           )}
-          {!error && fileUrl && isVisible && (
+          {!error && fileUrl && isVisible && !shouldUnmount && (
             fileType === 'image' ? (
               // Render images using native img tag
               // For 90/270 degree rotations, we need to swap dimensions to prevent clipping
@@ -361,7 +495,7 @@ export function PdfPageThumbnail({
               />
             ) : (
               // Render PDFs using react-pdf
-              workerReady ? (
+              workerReady && !shouldUnmount ? (
                 <Document
                   key={fileUrl}
                   file={fileUrl}
@@ -378,7 +512,7 @@ export function PdfPageThumbnail({
                     </div>
                   }
                 >
-                  {documentReady && pageRenderReady && workerReady && (
+                  {documentReady && pageRenderReady && workerReady && !shouldUnmount && (
                     <PageErrorBoundary
                       retryKey={renderRetryCountRef.current}
                       onError={() => {
@@ -400,14 +534,14 @@ export function PdfPageThumbnail({
                       }}
                     >
                       <Page
-                        key={`${pageNumber}-${pageWidth}-${rotation || 0}-${renderRetryCountRef.current}`}
+                        key={`${pageNumber}-${pageWidth}-${rotation || 0}-${renderRetryCountRef.current}-${isHighQuality ? 'hq' : 'lq'}`}
                         pageNumber={pageNumber}
                         width={pageWidth}
                         renderTextLayer={false}
                         renderAnnotationLayer={false}
                         rotate={rotation}
                         className="!scale-100"
-                        devicePixelRatio={Math.min(typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1, 1.5)}
+                        devicePixelRatio={isHighQuality ? devicePixelRatio : devicePixelRatio * 0.75}
                         renderMode="canvas"
                         onRenderError={(error) => {
                           console.error("Page render error:", error)
