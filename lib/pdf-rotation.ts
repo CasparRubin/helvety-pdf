@@ -1,4 +1,4 @@
-import { PDFPage, degrees } from "pdf-lib"
+import { PDFPage, PDFDocument, degrees } from "pdf-lib"
 
 /**
  * Normalizes a rotation angle to 0, 90, 180, or 270 degrees.
@@ -38,16 +38,19 @@ function extractRotationAngle(rotationValue: unknown): number {
 
 /**
  * Applies rotation to a target PDF page, combining the original page rotation
- * with user-applied rotation.
+ * with user-applied rotation. For images (pages that need dimension swapping),
+ * this function will resize the page when rotating 90 or 270 degrees.
  * 
  * @param sourcePage - The original PDF page to read rotation from
  * @param targetPage - The target PDF page to apply rotation to
  * @param userRotation - The user-applied rotation in degrees (0, 90, 180, or 270)
+ * @param isImage - Whether this page is from an image (needs dimension swapping on 90/270 rotation)
  */
 export async function applyPageRotation(
   sourcePage: PDFPage,
   targetPage: PDFPage,
-  userRotation: number
+  userRotation: number,
+  isImage: boolean = false
 ): Promise<void> {
   if (userRotation === 0) {
     return
@@ -58,9 +61,21 @@ export async function applyPageRotation(
     const rotationObj = sourcePage.getRotation()
     const originalRotation = extractRotationAngle(rotationObj)
     const totalRotation = normalizeRotation(originalRotation + userRotation)
+    
+    // For images, when rotating 90 or 270 degrees, we need to swap page dimensions
+    if (isImage && (userRotation === 90 || userRotation === 270)) {
+      const { width, height } = targetPage.getSize()
+      // Swap dimensions for 90/270 degree rotations
+      targetPage.setSize(height, width)
+    }
+    
     targetPage.setRotation(degrees(totalRotation))
   } catch {
     // If we can't read original rotation, just apply user rotation
+    if (isImage && (userRotation === 90 || userRotation === 270)) {
+      const { width, height } = targetPage.getSize()
+      targetPage.setSize(height, width)
+    }
     targetPage.setRotation(degrees(userRotation))
   }
 }

@@ -67,6 +67,7 @@ interface PdfPageThumbnailProps {
   pdfColor?: string
   pdfFileName?: string
   finalPageNumber?: number | null
+  fileType?: 'pdf' | 'image'
 }
 
 export function PdfPageThumbnail({ 
@@ -76,7 +77,8 @@ export function PdfPageThumbnail({
   rotation,
   pdfColor,
   pdfFileName,
-  finalPageNumber
+  finalPageNumber,
+  fileType
 }: PdfPageThumbnailProps) {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState(false)
@@ -124,8 +126,14 @@ export function PdfPageThumbnail({
     return workerInitPromise
   }, [])
 
-  // Set up PDF.js worker - all components await the same Promise
+  // Set up PDF.js worker - all components await the same Promise (only for PDFs)
   React.useEffect(() => {
+    // Skip worker initialization for images
+    if (fileType === 'image') {
+      setWorkerReady(true) // Set to true so rendering can proceed
+      return
+    }
+
     let isMounted = true
 
     initializeWorker()
@@ -144,7 +152,7 @@ export function PdfPageThumbnail({
     return () => {
       isMounted = false
     }
-  }, [initializeWorker])
+  }, [initializeWorker, fileType])
 
   // Reset states when fileUrl changes (new file loaded)
   React.useEffect(() => {
@@ -186,7 +194,7 @@ export function PdfPageThumbnail({
   }, [])
 
   // Measure container width and update page width dynamically
-  // This ensures PDF pages always display at full width regardless of column count,
+  // This ensures pages (PDFs and images) always display at full width regardless of column count,
   // with height automatically adjusting to maintain proper aspect ratio
   React.useEffect(() => {
     const container = containerRef.current
@@ -285,18 +293,23 @@ export function PdfPageThumbnail({
     }
   }
 
+  // For images rotated 90/270 degrees, adjust container to prevent clipping
+  const isImageRotated = fileType === 'image' && (rotation === 90 || rotation === 270)
+  
   return (
     <div className={cn("relative flex flex-col items-center gap-2", className)}>
       <div 
         ref={thumbnailRef}
         className={cn(
-          "relative w-full min-h-[200px] flex items-center justify-center"
+          "relative w-full flex items-center justify-center",
+          isImageRotated ? "min-h-[300px] aspect-square" : "min-h-[200px]"
         )}
       >
         <div 
           ref={containerRef}
           className={cn(
-            "relative w-full min-h-[200px] flex items-center justify-center"
+            "relative w-full flex items-center justify-center",
+            isImageRotated ? "min-h-[300px] aspect-square" : "min-h-[200px]"
           )}
         >
           {loading && (
@@ -320,81 +333,111 @@ export function PdfPageThumbnail({
           {!isVisible && !error && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted animate-pulse rounded" />
           )}
-          {!error && fileUrl && workerReady && isVisible ? (
-            <Document
-              key={fileUrl}
-              file={fileUrl}
-              onLoadSuccess={onDocumentLoadSuccess}
-              onLoadError={onDocumentLoadError}
-              loading={null}
-              className="w-full h-full"
-              error={
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
-                  <AlertCircle className="h-8 w-8 text-destructive" aria-hidden="true" />
-                  <p className="text-xs text-destructive text-center px-2 max-w-full break-words">
-                    Unable to load PDF
-                  </p>
-                </div>
-              }
-            >
-              {documentReady && pageRenderReady && workerReady && (
-                <PageErrorBoundary
-                  retryKey={renderRetryCountRef.current}
-                  onError={() => {
-                    // Handle messageHandler errors caught by error boundary
-                    if (renderRetryCountRef.current < 3) {
-                      setPageRenderReady(false)
-                      renderRetryCountRef.current += 1
-                      if (timeoutRef.current) {
-                        clearTimeout(timeoutRef.current)
-                      }
-                      timeoutRef.current = setTimeout(() => {
-                        setPageRenderReady(true)
-                        timeoutRef.current = null
-                      }, RENDER_RETRY_DELAY * (renderRetryCountRef.current + 1))
-                    } else {
-                      setError(true)
-                      setErrorMessage("Failed to render page")
-                    }
-                  }}
+          {!error && fileUrl && isVisible && (
+            fileType === 'image' ? (
+              // Render images using native img tag
+              // For 90/270 degree rotations, we need to swap dimensions to prevent clipping
+              <img
+                src={fileUrl}
+                alt={`Page ${pageNumber}`}
+                className="max-w-full max-h-full object-contain"
+                style={{
+                  transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                  // For 90/270 rotations, swap width/height to prevent clipping
+                  width: (rotation === 90 || rotation === 270) ? 'auto' : '100%',
+                  height: (rotation === 90 || rotation === 270) ? '100%' : 'auto',
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                }}
+                onLoad={() => {
+                  setLoading(false)
+                  setError(false)
+                }}
+                onError={() => {
+                  setLoading(false)
+                  setError(true)
+                  setErrorMessage("Unable to load image")
+                }}
+              />
+            ) : (
+              // Render PDFs using react-pdf
+              workerReady ? (
+                <Document
+                  key={fileUrl}
+                  file={fileUrl}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  onLoadError={onDocumentLoadError}
+                  loading={null}
+                  className="w-full h-full"
+                  error={
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
+                      <AlertCircle className="h-8 w-8 text-destructive" aria-hidden="true" />
+                      <p className="text-xs text-destructive text-center px-2 max-w-full break-words">
+                        Unable to load PDF
+                      </p>
+                    </div>
+                  }
                 >
-                  <Page
-                    key={`${pageNumber}-${pageWidth}-${rotation || 0}-${renderRetryCountRef.current}`}
-                    pageNumber={pageNumber}
-                    width={pageWidth}
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
-                    rotate={rotation}
-                    className="!scale-100"
-                    devicePixelRatio={Math.min(typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1, 1.5)}
-                    renderMode="canvas"
-                    onRenderError={(error) => {
-                      console.error("Page render error:", error)
-                      // Check if it's a messageHandler error - if so, retry after a delay
-                      // This handles race conditions where the worker isn't fully ready
-                      const errorMessage = error?.message || String(error)
-                      if ((errorMessage.includes("messageHandler") || errorMessage.includes("sendWithPromise")) && renderRetryCountRef.current < 3) {
-                        // Reset states and retry after a longer delay
-                        setPageRenderReady(false)
-                        renderRetryCountRef.current += 1
-                        if (timeoutRef.current) {
-                          clearTimeout(timeoutRef.current)
+                  {documentReady && pageRenderReady && workerReady && (
+                    <PageErrorBoundary
+                      retryKey={renderRetryCountRef.current}
+                      onError={() => {
+                        // Handle messageHandler errors caught by error boundary
+                        if (renderRetryCountRef.current < 3) {
+                          setPageRenderReady(false)
+                          renderRetryCountRef.current += 1
+                          if (timeoutRef.current) {
+                            clearTimeout(timeoutRef.current)
+                          }
+                          timeoutRef.current = setTimeout(() => {
+                            setPageRenderReady(true)
+                            timeoutRef.current = null
+                          }, RENDER_RETRY_DELAY * (renderRetryCountRef.current + 1))
+                        } else {
+                          setError(true)
+                          setErrorMessage("Failed to render page")
                         }
-                        timeoutRef.current = setTimeout(() => {
-                          setPageRenderReady(true)
-                          timeoutRef.current = null
-                        }, RENDER_RETRY_DELAY * (renderRetryCountRef.current + 1))
-                      } else {
-                        // For other errors or after max retries, show error state
-                        setError(true)
-                        setErrorMessage("Failed to render page")
-                      }
-                    }}
-                  />
-                </PageErrorBoundary>
-              )}
-            </Document>
-          ) : null}
+                      }}
+                    >
+                      <Page
+                        key={`${pageNumber}-${pageWidth}-${rotation || 0}-${renderRetryCountRef.current}`}
+                        pageNumber={pageNumber}
+                        width={pageWidth}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                        rotate={rotation}
+                        className="!scale-100"
+                        devicePixelRatio={Math.min(typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1, 1.5)}
+                        renderMode="canvas"
+                        onRenderError={(error) => {
+                          console.error("Page render error:", error)
+                          // Check if it's a messageHandler error - if so, retry after a delay
+                          // This handles race conditions where the worker isn't fully ready
+                          const errorMessage = error?.message || String(error)
+                          if ((errorMessage.includes("messageHandler") || errorMessage.includes("sendWithPromise")) && renderRetryCountRef.current < 3) {
+                            // Reset states and retry after a longer delay
+                            setPageRenderReady(false)
+                            renderRetryCountRef.current += 1
+                            if (timeoutRef.current) {
+                              clearTimeout(timeoutRef.current)
+                            }
+                            timeoutRef.current = setTimeout(() => {
+                              setPageRenderReady(true)
+                              timeoutRef.current = null
+                            }, RENDER_RETRY_DELAY * (renderRetryCountRef.current + 1))
+                          } else {
+                            // For other errors or after max retries, show error state
+                            setError(true)
+                            setErrorMessage("Failed to render page")
+                          }
+                        }}
+                      />
+                    </PageErrorBoundary>
+                  )}
+                </Document>
+              ) : null
+            )
+          )}
         </div>
       </div>
       <div className="w-full text-center space-y-1">

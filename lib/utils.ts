@@ -36,7 +36,7 @@ export function formatTimestamp(): string {
  * @param wait - The number of milliseconds to delay
  * @returns A debounced version of the function
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => void>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {

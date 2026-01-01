@@ -132,7 +132,7 @@ export function Navbar() {
               <h3 className="text-base font-medium mb-2">Client-Side Processing</h3>
               <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                 <p>
-                  All PDF processing happens entirely in your browser. No data is sent to any server. This means your files stay completely private, but performance depends on your device's capabilities.
+                  All file processing (PDFs and images) happens entirely in your browser. No data is sent to any server. This means your files stay completely private, but performance depends on your device's capabilities.
                 </p>
               </div>
             </div>

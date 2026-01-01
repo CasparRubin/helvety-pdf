@@ -278,6 +278,7 @@ export function PdfPageGrid({
                 pdfColor={fileInfo?.color}
                 pdfFileName={fileInfo?.file.name}
                 finalPageNumber={finalPageNumber}
+                fileType={fileInfo?.type}
               />
               <div className="mt-2 flex flex-wrap justify-center gap-1">
                 {isDeleted && (

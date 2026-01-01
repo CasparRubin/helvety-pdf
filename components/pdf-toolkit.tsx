@@ -115,6 +115,9 @@ export function PdfToolkit({
               <Upload className="h-4 w-4 mr-2" />
               {pdfFiles.length === 0 ? "Add Files" : "Add More Files"}
             </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              PDF files and images are supported
+            </p>
             {pdfFiles.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -132,7 +135,7 @@ export function PdfToolkit({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Clear All Files?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will remove all PDF files and pages from the canvas. This action cannot be undone.
+                      This will remove all files and pages from the canvas. This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -188,7 +191,7 @@ export function PdfToolkit({
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">PDF Files</span>
+                <span className="text-muted-foreground">Files</span>
                 <Badge variant="secondary">{pdfFiles.length}</Badge>
               </div>
               {deletedCount > 0 && (

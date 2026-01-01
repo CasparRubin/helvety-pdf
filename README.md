@@ -5,28 +5,29 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
-A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract pages from PDF files without any server-side processing. All file processing happens entirely in your browser.
+A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract pages from PDF files and images without any server-side processing. All file processing happens entirely in your browser.
 
 **App:** [pdf.helvety.com](https://pdf.helvety.com)
 
-**Privacy First** - 100% Client-Side Processing. All PDF processing happens entirely in your browser. Your files never leave your device, and no data is collected or transmitted.
+**Privacy First** - 100% Client-Side Processing. All file processing happens entirely in your browser. Your files never leave your device, and no data is collected or transmitted.
 
 ## Features
 
-- **Client-side PDF processing** - All operations happen in your browser
-- **PDF page thumbnails preview** - Visual preview of all pages before processing
+- **Client-side file processing** - All operations happen in your browser
+- **PDF and image support** - Upload PDF files and images (PNG, JPEG, WebP, GIF, etc.)
+- **Page thumbnails preview** - Visual preview of all pages before processing
 - **Drag & drop reordering** - Easily rearrange pages by dragging thumbnails
 - **Page rotation** - Rotate individual pages by 90° increments
-- **Page deletion** - Remove unwanted pages from your PDFs
+- **Page deletion** - Remove unwanted pages from your documents
 - **Page extraction** - Extract individual pages as separate PDF files
-- **Multi-file merging** - Combine multiple PDF files into one
+- **Multi-file merging** - Combine multiple PDF files and images into one PDF
 - **Drag & drop upload** - Intuitive file upload interface
 - **Customizable grid layout** - Adjust pages per row to accommodate different page sizes
 - **Dark & Light mode support** - Comfortable viewing in any lighting condition
 
 ## How It Works
 
-1. **Upload PDFs** - Drag and drop or click to browse and select multiple PDF files
+1. **Upload Files** - Drag and drop or click to browse and select multiple PDF files and/or images
 2. **Preview & Manage** - See thumbnails of all pages, reorder by dragging, rotate, or delete pages as needed
 3. **Download** - Your processed PDF downloads automatically with a timestamped filename
 

@@ -12,7 +12,7 @@ import { getPdfColor } from "@/lib/pdf-colors"
 import { formatPdfError } from "@/lib/pdf-errors"
 import { downloadBlob } from "@/lib/file-download"
 import { applyPageRotation, normalizeRotation } from "@/lib/pdf-rotation"
-import { loadPdfFromFile, extractPageFromPdf } from "@/lib/pdf-utils"
+import { loadPdfFromFile, extractPageFromPdf, convertImageToPdf } from "@/lib/pdf-utils"
 import { DELAYS } from "@/lib/constants"
 import { useColumns } from "@/hooks/use-columns"
 import type { PdfFile, UnifiedPage } from "@/lib/types"
@@ -40,25 +40,49 @@ export function HelvetyPdf() {
   /**
    * Gets a cached PDF document or loads it if not in cache.
    * Caches the loaded PDF for future use to avoid redundant loading operations.
+   * For images, re-converts them to PDF if cache is missing.
    * 
-   * @param fileId - The unique identifier of the PDF file
+   * @param fileId - The unique identifier of the file
    * @param file - The File object to load if not cached
+   * @param fileType - Optional file type ('pdf' | 'image') to determine loading strategy
    * @returns A promise that resolves to the PDFDocument
    */
-  const getCachedPdf = React.useCallback(async (fileId: string, file: File): Promise<PDFDocument> => {
+  const getCachedPdf = React.useCallback(async (fileId: string, file: File, fileType?: 'pdf' | 'image'): Promise<PDFDocument> => {
     if (pdfCacheRef.current.has(fileId)) {
-      return pdfCacheRef.current.get(fileId)!
+      const cached = pdfCacheRef.current.get(fileId)!
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Retrieved cached PDF for ${fileType} file:`, file.name, 'with ID:', fileId)
+      }
+      return cached
     }
+    
+    // For images, try to re-convert if cache is missing (fallback)
+    // This can happen if cache was cleared or file was uploaded before caching was implemented
+    if (fileType === 'image') {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Cache miss for image, re-converting:', file.name, 'ID:', fileId)
+        console.warn('Available cache keys:', Array.from(pdfCacheRef.current.keys()))
+      }
+      try {
+        // Re-convert the image to PDF
+        const pdf = await convertImageToPdf(file)
+        pdfCacheRef.current.set(fileId, pdf)
+        return pdf
+      } catch (err) {
+        throw new Error(`Failed to convert image to PDF: ${file.name}. ${err instanceof Error ? err.message : String(err)}`)
+      }
+    }
+    // For PDFs, load from file
     const pdf = await loadPdfFromFile(file)
     pdfCacheRef.current.set(fileId, pdf)
     return pdf
   }, [])
 
   /**
-   * Creates a unified pages array from PDF files, assigning sequential page numbers
-   * across all files.
+   * Creates a unified pages array from files (PDFs and images), assigning sequential page numbers
+   * across all files. Images are treated as single-page documents.
    * 
-   * @param files - Array of PDF files to process
+   * @param files - Array of files (PDFs and images) to process
    * @returns Array of unified pages with sequential numbering
    */
   const createUnifiedPages = React.useCallback((files: PdfFile[]): UnifiedPage[] => {
@@ -93,14 +117,15 @@ export function HelvetyPdf() {
   }, [pdfFiles, createUnifiedPages])
 
   /**
-   * Validates and adds PDF files to the application state.
+   * Validates and adds PDF files and images to the application state.
    * 
    * Performs validation checks:
-   * - Verifies file type is PDF
+   * - Verifies file type is PDF or image
    * - Checks for duplicate files (by name and size)
-   * - Validates PDF can be loaded and has pages
+   * - Validates PDF can be loaded and has pages, or image can be converted to PDF
    * 
    * Creates blob URLs for preview and assigns colors to files.
+   * Images are converted to single-page PDFs on upload and cached for performance.
    * 
    * @param files - FileList or array of File objects to validate and add
    */
@@ -110,8 +135,11 @@ export function HelvetyPdf() {
     const validationErrors: string[] = []
 
     for (const file of fileArray) {
-      if (file.type !== "application/pdf") {
-        validationErrors.push(`'${file.name}' is not a PDF file.`)
+      const isPdf = file.type === "application/pdf"
+      const isImage = file.type.startsWith("image/")
+
+      if (!isPdf && !isImage) {
+        validationErrors.push(`'${file.name}' is not a PDF or image file.`)
         continue
       }
 
@@ -121,10 +149,25 @@ export function HelvetyPdf() {
       }
 
       try {
-        const blob = new Blob([file], { type: "application/pdf" })
-        const url = URL.createObjectURL(blob)
-        
-        const pdf = await loadPdfFromFile(file)
+        let pdf: PDFDocument
+        let fileType: 'pdf' | 'image'
+        let blob: Blob
+        let url: string
+
+        if (isPdf) {
+          // Handle PDF files
+          blob = new Blob([file], { type: "application/pdf" })
+          url = URL.createObjectURL(blob)
+          pdf = await loadPdfFromFile(file)
+          fileType = 'pdf'
+        } else {
+          // Handle image files - convert to PDF
+          blob = new Blob([file], { type: file.type })
+          url = URL.createObjectURL(blob)
+          pdf = await convertImageToPdf(file)
+          fileType = 'image'
+        }
+
         const count = pdf.getPageCount()
 
         if (count === 0) {
@@ -133,15 +176,27 @@ export function HelvetyPdf() {
           continue
         }
 
+        // Generate fileId first, then cache the PDF
+        const fileId = generateId()
+        
+        // Cache the converted PDF (for images, this is the converted PDF)
+        // Make sure to cache BEFORE adding to state to avoid race conditions
+        pdfCacheRef.current.set(fileId, pdf)
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Cached PDF for ${fileType} file:`, file.name, 'with ID:', fileId)
+        }
+
         // Assign color based on current file count
         const color = getPdfColor(pdfFiles.length + pdfFilesToAdd.length)
 
         pdfFilesToAdd.push({
-          id: generateId(),
+          id: fileId,
           file,
           url,
           pageCount: count,
           color,
+          type: fileType,
         })
       } catch (err) {
         const userMessage = formatPdfError(err, `Can't load '${file.name}':`)
@@ -217,6 +272,14 @@ export function HelvetyPdf() {
     setError(null)
   }
 
+  // Debug function to check cache state
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('PDF Cache size:', pdfCacheRef.current.size)
+      console.log('PDF Files:', pdfFiles.map(f => ({ id: f.id, name: f.file.name, type: f.type })))
+    }
+  }, [pdfFiles])
+
   const handleClearAll = () => {
     // Clean up all blob URLs
     pdfFiles.forEach(file => {
@@ -274,15 +337,16 @@ export function HelvetyPdf() {
   }
 
   /**
-   * Extracts a single page from a PDF file and downloads it as a new PDF.
+   * Extracts a single page from a file (PDF or image) and downloads it as a new PDF.
    * 
-   * Applies any user-applied rotation to the extracted page.
+   * Applies user-applied rotation to the extracted page. For images, the page is
+   * already converted to a PDF, so extraction works identically to PDF pages.
    * 
    * @param unifiedPageNumber - The unified page number to extract
    */
   const handleExtractPage = async (unifiedPageNumber: number) => {
     if (pdfFiles.length === 0 || unifiedPages.length === 0) {
-      setError("No PDF files loaded.")
+      setError("No files loaded.")
       return
     }
 
@@ -296,7 +360,9 @@ export function HelvetyPdf() {
     setError(null)
 
     try {
-      const pdf = await getCachedPdf(file.id, file.file)
+      // Ensure we have the file type - default to 'pdf' if not set (for backwards compatibility)
+      const fileType = file.type || (file.file.type === 'application/pdf' ? 'pdf' : 'image')
+      const pdf = await getCachedPdf(file.id, file.file, fileType)
       const pageIndex = page.originalPageNumber - 1
       const newPdf = await extractPageFromPdf(pdf, pageIndex)
 
@@ -305,13 +371,15 @@ export function HelvetyPdf() {
       if (rotation !== 0) {
         const newPage = newPdf.getPage(0)
         const originalPage = pdf.getPage(pageIndex)
-        await applyPageRotation(originalPage, newPage, rotation)
+        // Pass isImage flag to handle dimension swapping for rotated images
+        await applyPageRotation(originalPage, newPage, rotation, fileType === 'image')
       }
 
       const pdfBytes = await newPdf.save()
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" })
 
-      const baseName = file.file.name.replace(/\.pdf$/i, "")
+      // Remove file extension for base name (works for both PDF and image files)
+      const baseName = file.file.name.replace(/\.[^/.]+$/, "")
       const dateStr = formatTimestamp()
       const filename = `${baseName}_page${page.originalPageNumber}_${dateStr}.pdf`
 
@@ -327,15 +395,16 @@ export function HelvetyPdf() {
   }
 
   /**
-   * Merges all active (non-deleted) pages from all PDF files into a single PDF
+   * Merges all active (non-deleted) pages from all files (PDFs and images) into a single PDF
    * and downloads it.
    * 
    * Pages are merged in the order specified by pageOrder, excluding deleted pages.
-   * User-applied rotations are preserved in the merged PDF.
+   * User-applied rotations are preserved in the merged PDF. Images are already converted
+   * to PDF pages, so they are handled identically to PDF pages.
    */
   const handleDownload = async () => {
     if (pdfFiles.length === 0 || unifiedPages.length === 0) {
-      setError("Add at least one PDF file to download.")
+      setError("Add at least one file to download.")
       return
     }
 
@@ -360,13 +429,20 @@ export function HelvetyPdf() {
         await Promise.all(
           batch.map(async (unifiedPageNum) => {
             const page = unifiedPages.find(p => p.unifiedPageNumber === unifiedPageNum)
-            if (!page) return
+            if (!page) {
+              throw new Error(`Page ${unifiedPageNum} not found in unified pages`)
+            }
 
             const file = pdfFiles.find(f => f.id === page.fileId)
-            if (!file) return
+            if (!file) {
+              throw new Error(`File not found for page ${unifiedPageNum}`)
+            }
 
             try {
-              const pdf = await getCachedPdf(file.id, file.file)
+              // Get cached PDF (for images, this is the converted PDF)
+              // Ensure we have the file type - default to 'pdf' if not set (for backwards compatibility)
+              const fileType = file.type || (file.file.type === 'application/pdf' ? 'pdf' : 'image')
+              const pdf = await getCachedPdf(file.id, file.file, fileType)
               const pageIndex = page.originalPageNumber - 1
               const [copiedPage] = await mergedPdf.copyPages(pdf, [pageIndex])
               mergedPdf.addPage(copiedPage)
@@ -376,10 +452,15 @@ export function HelvetyPdf() {
               if (rotation !== 0) {
                 const newPage = mergedPdf.getPage(mergedPdf.getPageCount() - 1)
                 const originalPage = pdf.getPage(pageIndex)
-                await applyPageRotation(originalPage, newPage, rotation)
+                // Pass isImage flag to handle dimension swapping for rotated images
+                await applyPageRotation(originalPage, newPage, rotation, fileType === 'image')
               }
             } catch (err) {
-              const userMessage = formatPdfError(err, `Can't process page from '${file.file.name}':`)
+              console.error('Error processing page:', err)
+              console.error('File details:', { id: file.id, name: file.file.name, type: file.type })
+              const userMessage = err instanceof Error 
+                ? err.message 
+                : formatPdfError(err, `Can't process page from '${file.file.name}':`)
               throw new Error(userMessage)
             }
           })
@@ -407,9 +488,10 @@ export function HelvetyPdf() {
 
       setError(null)
     } catch (err) {
+      console.error('Download error:', err)
       const errorMessage = err instanceof Error 
         ? err.message 
-        : "Download failed. Check that all files are valid PDFs and try again."
+        : "Download failed. Check that all files are valid and try again."
       setError(errorMessage)
     } finally {
       setIsProcessing(false)
@@ -496,7 +578,7 @@ export function HelvetyPdf() {
                 <Upload className="h-12 w-12 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">
-                    Drag and drop one or more PDF files here
+                    Drag and drop PDF files or images here
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Or use the panel {columns === 1 ? "on the top" : "on the right"} to add your files
@@ -506,7 +588,7 @@ export function HelvetyPdf() {
             </div>
           )}
 
-          {/* PDF Pages Grid */}
+          {/* Pages Grid - displays PDF pages and images */}
           {pdfFiles.length > 0 && unifiedPages.length > 0 && (
             <PdfPageGrid
               pdfFiles={pdfFiles}
@@ -528,7 +610,7 @@ export function HelvetyPdf() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="application/pdf"
+            accept="application/pdf,image/*"
             multiple
             onChange={handleFileInput}
             className="hidden"

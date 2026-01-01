@@ -1,9 +1,14 @@
+/**
+ * Represents a file (PDF or image) that has been uploaded and processed.
+ * Images are converted to single-page PDFs internally, but the original type is preserved.
+ */
 export interface PdfFile {
   id: string
   file: File
   url: string
   pageCount: number
   color: string
+  type?: 'pdf' | 'image' // Optional field to track source file type
 }
 
 export interface UnifiedPage {
