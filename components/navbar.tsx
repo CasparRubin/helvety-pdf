@@ -167,6 +167,26 @@ export function Navbar() {
                   </a>
                   .
                 </p>
+                <p className="mt-2 font-medium">
+                  You must read and agree to the Terms of Service and Privacy Policy before using this application.
+                </p>
+                <p className="mt-2">
+                  <Link
+                    href="/terms"
+                    className="text-primary hover:underline"
+                    onClick={() => setIsAboutOpen(false)}
+                  >
+                    Terms of Service
+                  </Link>
+                  {" • "}
+                  <Link
+                    href="/privacy"
+                    className="text-primary hover:underline"
+                    onClick={() => setIsAboutOpen(false)}
+                  >
+                    Privacy Policy
+                  </Link>
+                </p>
               </div>
             </div>
             <div className="border-t pt-4">
