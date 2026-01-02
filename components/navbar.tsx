@@ -6,6 +6,7 @@ import * as React from "react"
 // Next.js
 import Image from "next/image"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 // External libraries
 import { Github, Info } from "lucide-react"
@@ -15,11 +16,12 @@ import { ThemeSwitcher } from "@/components/theme-switcher"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import {
   Tooltip,
   TooltipContent,
@@ -29,8 +31,32 @@ import {
 import { Separator } from "@/components/ui/separator"
 
 export function Navbar() {
-  const [isAboutOpen, setIsAboutOpen] = React.useState(false)
+  const pathname = usePathname()
+  const [isAboutOpen, setIsAboutOpen] = React.useState(true)
+  const [hasAcknowledged, setHasAcknowledged] = React.useState(false)
   const versionString = process.env.NEXT_PUBLIC_BUILD_VERSION || "v.0.000000.0000 - Experimental"
+
+  // Only show dialog on main page, not on terms/privacy pages
+  const shouldShowDialog = pathname === "/"
+
+  // Ensure dialog opens on every page load/refresh (only on main page)
+  React.useEffect(() => {
+    if (shouldShowDialog) {
+      setIsAboutOpen(true)
+      setHasAcknowledged(false)
+    } else {
+      setIsAboutOpen(false)
+    }
+  }, [shouldShowDialog])
+
+  // Handle dialog open change - only allow opening, prevent closing via outside click or ESC
+  const handleOpenChange = React.useCallback((open: boolean) => {
+    // Only allow opening, ignore attempts to close
+    if (open) {
+      setIsAboutOpen(true)
+    }
+    // If open is false, do nothing - this prevents closing via outside click or ESC
+  }, [])
 
   return (
     <>
@@ -116,8 +142,8 @@ export function Navbar() {
         </div>
       </nav>
 
-      <Dialog open={isAboutOpen} onOpenChange={setIsAboutOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <Dialog open={isAboutOpen && shouldShowDialog} onOpenChange={handleOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto [&>button:first-child]:hidden">
           <DialogHeader>
             <DialogTitle>About</DialogTitle>
           </DialogHeader>
@@ -135,6 +161,14 @@ export function Navbar() {
               <div className="space-y-1 text-sm text-muted-foreground">
                 <p>Large files or many pages may take longer to process, especially on older devices.</p>
                 <p>Processing time increases with file size and number of pages.</p>
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <h3 className="text-base font-medium mb-2">Simplicity by Design</h3>
+              <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                <p>
+                  This app is intentionally simple. No accounts. No logins. No ads. No tracking. No unnecessary features. Just a fast and straightforward tool that does one thing well and stays out of your way.
+                </p>
               </div>
             </div>
             <div className="border-t pt-4">
@@ -170,54 +204,70 @@ export function Navbar() {
                 <p className="mt-2 font-medium">
                   You must read and agree to the Terms of Service and Privacy Policy before using this application.
                 </p>
-                <p className="mt-2">
+                <p className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                   <Link
                     href="/terms"
                     className="text-primary hover:underline"
-                    onClick={() => setIsAboutOpen(false)}
                   >
                     Terms of Service
                   </Link>
-                  {" • "}
+                  <span>•</span>
                   <Link
                     href="/privacy"
                     className="text-primary hover:underline"
-                    onClick={() => setIsAboutOpen(false)}
                   >
                     Privacy Policy
                   </Link>
+                  <span>•</span>
+                  <a
+                    href="https://helvety.com/legal-notice"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline transition-colors"
+                  >
+                    Legal Notice
+                  </a>
                 </p>
               </div>
             </div>
-            <div className="border-t pt-4">
-              <h3 className="text-base font-medium mb-2">Simplicity by Design</h3>
-              <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                <p>
-                  This app is intentionally simple. No accounts. No logins. No ads. No tracking. No unnecessary features. Just a fast and straightforward tool that does one thing well and stays out of your way.
-                </p>
+            <div className="flex flex-col gap-4 pt-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="acknowledge-terms"
+                  checked={hasAcknowledged}
+                  onCheckedChange={setHasAcknowledged}
+                />
+                <Label
+                  htmlFor="acknowledge-terms"
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  I have read and understood the{" "}
+                  <Link
+                    href="/terms"
+                    className="text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Terms
+                  </Link>
+                  {" and "}
+                  <Link
+                    href="/privacy"
+                    className="text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Privacy Policy
+                  </Link>
+                </Label>
               </div>
-            </div>
-            <div className="border-t pt-4 flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
-              <a
-                href="mailto:contact@helvety.com"
-                className="text-primary hover:underline transition-colors"
-              >
-                contact@helvety.com
-              </a>
-              <span className="hidden sm:inline">•</span>
-              <a
-                href="https://helvety.com/legal-notice"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline transition-colors"
-              >
-                Legal Notice
-              </a>
-            </div>
-            <div className="flex justify-end pt-4">
-              <DialogClose asChild>
-                <Button variant="outline">Close</Button>
-              </DialogClose>
+              <div className="flex justify-end">
+                <Button 
+                  variant="default"
+                  onClick={() => setIsAboutOpen(false)}
+                  disabled={!hasAcknowledged}
+                >
+                  Access App
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
