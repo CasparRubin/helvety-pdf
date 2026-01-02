@@ -76,25 +76,37 @@ export function HelvetyPdf(): React.JSX.Element {
     setIsProcessing(pdfProcessing.isProcessing)
   }, [pdfProcessing.isProcessing])
 
+  // Memoize computed statistics to prevent unnecessary recalculations
+  const deletedCount = React.useMemo(() => {
+    return pageOrder.filter(p => deletedPages.has(p)).length
+  }, [pageOrder, deletedPages])
+
+  const rotatedCount = React.useMemo(() => {
+    return Object.keys(pageRotations).filter(k => pageRotations[Number(k)] !== 0).length
+  }, [pageRotations])
+
   // Drag and drop
   const dragDrop = useDragDrop()
+
+  // Extract stable error setter to avoid unnecessary re-renders
+  const setError = errorHandler.setError
 
   // File input handler
   const handleFileInput = React.useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = e.target.files
     if (files && files.length > 0) {
-      validateAndAddFilesBase(files, errorHandler.setError)
+      validateAndAddFilesBase(files, setError)
     }
     // Reset input so same file can be selected again
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
-  }, [validateAndAddFilesBase, errorHandler.setError])
+  }, [validateAndAddFilesBase, setError])
 
   // Wrapper for drag drop file handling
   const handleDropWithFiles = React.useCallback((files: FileList): void => {
-    validateAndAddFilesBase(files, errorHandler.setError)
-  }, [validateAndAddFilesBase, errorHandler.setError])
+    validateAndAddFilesBase(files, setError)
+  }, [validateAndAddFilesBase, setError])
 
   // File removal with state cleanup
   const handleRemoveFile = React.useCallback((fileId: string): void => {
@@ -102,16 +114,19 @@ export function HelvetyPdf(): React.JSX.Element {
     // Reset all page-related state when files change
     setDeletedPages(new Set())
     setPageRotations({})
-    errorHandler.setError(null)
-  }, [removeFile, errorHandler])
+    setError(null)
+  }, [removeFile, setError])
 
   // Clear all with state cleanup
   const handleClearAll = React.useCallback((): void => {
     clearAllFiles()
     setDeletedPages(new Set())
     setPageRotations({})
-    errorHandler.setError(null)
-  }, [clearAllFiles, errorHandler])
+    setError(null)
+  }, [clearAllFiles, setError])
+
+  // Memoize page order length to avoid recalculating in callback
+  const pageOrderLength = React.useMemo(() => pageOrder.length, [pageOrder.length])
 
   // Page deletion toggle
   const handleToggleDelete = React.useCallback((unifiedPageNumber: number): void => {
@@ -121,18 +136,18 @@ export function HelvetyPdf(): React.JSX.Element {
         newSet.delete(unifiedPageNumber)
       } else {
         // Prevent deleting all pages
-        const totalPages = pageOrder.length
+        const totalPages = pageOrderLength
         const deletedCount = newSet.size
         if (totalPages - deletedCount <= 1) {
-          errorHandler.setError("Cannot delete all pages. At least one page must remain.")
+          setError("Cannot delete all pages. At least one page must remain.")
           return prev
         }
         newSet.add(unifiedPageNumber)
       }
       return newSet
     })
-    errorHandler.setError(null)
-  }, [pageOrder.length, errorHandler])
+    setError(null)
+  }, [pageOrderLength, setError])
 
   // Page rotation
   const handleRotatePage = React.useCallback((unifiedPageNumber: number, angle: number): void => {
@@ -144,8 +159,8 @@ export function HelvetyPdf(): React.JSX.Element {
         [unifiedPageNumber]: newRotation,
       }
     })
-    errorHandler.setError(null)
-  }, [errorHandler])
+    setError(null)
+  }, [setError])
 
   // Reset rotation
   const handleResetRotation = React.useCallback((unifiedPageNumber: number): void => {
@@ -154,8 +169,8 @@ export function HelvetyPdf(): React.JSX.Element {
       delete newRotations[unifiedPageNumber]
       return newRotations
     })
-    errorHandler.setError(null)
-  }, [errorHandler])
+    setError(null)
+  }, [setError])
 
   return (
     <div 
@@ -274,8 +289,8 @@ export function HelvetyPdf(): React.JSX.Element {
         <PdfToolkit
         pdfFiles={pdfFiles}
         totalPages={pageOrder.length}
-        deletedCount={pageOrder.filter(p => deletedPages.has(p)).length}
-        rotatedCount={Object.keys(pageRotations).filter(k => pageRotations[Number(k)] !== 0).length}
+        deletedCount={deletedCount}
+        rotatedCount={rotatedCount}
         onDownload={pdfProcessing.downloadMerged}
         onClearAll={handleClearAll}
         onRemoveFile={handleRemoveFile}

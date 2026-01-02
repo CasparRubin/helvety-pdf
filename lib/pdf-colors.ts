@@ -16,15 +16,20 @@ const PDF_COLOR_PALETTE = [
 ]
 
 /**
- * Get a color for a PDF file based on its index
- * Colors cycle through the palette
+ * Gets a color for a PDF file based on its index.
+ * Colors cycle through the palette when the index exceeds the palette size.
+ * 
+ * @param fileIndex - The zero-based index of the file
+ * @returns An oklch color string from the palette
  */
 export function getPdfColor(fileIndex: number): string {
   return PDF_COLOR_PALETTE[fileIndex % PDF_COLOR_PALETTE.length]
 }
 
 /**
- * Add alpha channel to an oklch color string
+ * Adds an alpha channel to an oklch color string.
+ * Removes any existing alpha channel before adding the new one.
+ * 
  * @param color - oklch color string (e.g., "oklch(0.65 0.22 25)")
  * @param alpha - Alpha value between 0 and 1 (default: 0.15)
  * @returns oklch color string with alpha channel (e.g., "oklch(0.65 0.22 25 / 0.15)")

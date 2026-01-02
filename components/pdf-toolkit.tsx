@@ -1,8 +1,12 @@
 "use client"
 
+// React
 import * as React from "react"
+
+// External libraries
 import { Download, Loader2, Trash2, X, Upload } from "lucide-react"
 
+// Internal components
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,9 +23,12 @@ import { Badge } from "@/components/ui/badge"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 
+// Internal utilities
 import { cn } from "@/lib/utils"
 import { addOklchAlpha } from "@/lib/pdf-colors"
 import { BREAKPOINTS, COLUMNS } from "@/lib/constants"
+
+// Types
 import type { PdfFile } from "@/lib/types"
 
 interface PdfToolkitProps {
@@ -260,5 +267,35 @@ function PdfToolkitComponent({
 }
 
 // Memoize component to prevent unnecessary re-renders
-export const PdfToolkit = React.memo(PdfToolkitComponent)
+// Custom comparison function to optimize re-renders
+export const PdfToolkit = React.memo(PdfToolkitComponent, (prevProps, nextProps) => {
+  // Compare primitive values
+  if (
+    prevProps.isProcessing !== nextProps.isProcessing ||
+    prevProps.columns !== nextProps.columns ||
+    prevProps.totalPages !== nextProps.totalPages ||
+    prevProps.deletedCount !== nextProps.deletedCount ||
+    prevProps.rotatedCount !== nextProps.rotatedCount
+  ) {
+    return false // Props changed, re-render
+  }
+
+  // Compare array length and reference (if reference is same, array hasn't changed)
+  if (
+    prevProps.pdfFiles.length !== nextProps.pdfFiles.length ||
+    prevProps.pdfFiles !== nextProps.pdfFiles
+  ) {
+    return false // Array changed, re-render
+  }
+
+  // Compare function references (if they're stable, this is fine)
+  // If functions changed, we want to re-render anyway
+  return (
+    prevProps.onDownload === nextProps.onDownload &&
+    prevProps.onClearAll === nextProps.onClearAll &&
+    prevProps.onRemoveFile === nextProps.onRemoveFile &&
+    prevProps.onAddFiles === nextProps.onAddFiles &&
+    prevProps.onColumnsChange === nextProps.onColumnsChange
+  )
+})
 

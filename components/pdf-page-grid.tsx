@@ -1,6 +1,9 @@
 "use client"
 
+// React
 import * as React from "react"
+
+// External libraries
 import { 
   ChevronUpIcon, 
   ChevronDownIcon, 
@@ -13,12 +16,17 @@ import {
   Download
 } from "lucide-react"
 
+// Internal components
 import { PdfPageThumbnail } from "@/components/pdf-page-thumbnail"
 import { PdfActionButtons } from "@/components/pdf-action-buttons"
 import { Badge } from "@/components/ui/badge"
 
+// Internal utilities
 import { cn } from "@/lib/utils"
 import { addOklchAlpha } from "@/lib/pdf-colors"
+import { createPageMap, createFileMap, createFileUrlMap } from "@/lib/pdf-lookup-utils"
+
+// Types
 import type { PdfFile, UnifiedPage } from "@/lib/types"
 
 interface PdfPageGridProps {
@@ -84,7 +92,7 @@ function PdfPageGridComponent({
 
     setDraggedIndex(null)
     setDragOverIndex(null)
-  }, [onReorder])
+  }, [draggedIndex, pageOrder, onReorder])
 
   const handleDragEnd = React.useCallback((): void => {
     setDraggedIndex(null)
@@ -98,7 +106,7 @@ function PdfPageGridComponent({
     newOrder[index] = newOrder[index - 1]
     newOrder[index - 1] = temp
     onReorder(newOrder)
-  }, [onReorder])
+  }, [pageOrder, onReorder])
 
   const handleMoveDown = React.useCallback((index: number): void => {
     if (index === pageOrder.length - 1) return
@@ -107,7 +115,7 @@ function PdfPageGridComponent({
     newOrder[index] = newOrder[index + 1]
     newOrder[index + 1] = temp
     onReorder(newOrder)
-  }, [onReorder])
+  }, [pageOrder, onReorder])
 
   const handleMoveLeft = React.useCallback((index: number): void => {
     handleMoveUp(index)
@@ -118,29 +126,24 @@ function PdfPageGridComponent({
   }, [handleMoveDown])
 
   // Create memoized maps for O(1) lookups instead of O(n) Array.find()
-  const pageInfoMap = React.useMemo(() => {
-    const map = new Map<number, UnifiedPage>()
-    unifiedPages.forEach(page => {
-      map.set(page.unifiedPageNumber, page)
-    })
-    return map
-  }, [unifiedPages])
+  const pageInfoMap = React.useMemo(() => createPageMap(unifiedPages), [unifiedPages])
+  const fileInfoMap = React.useMemo(() => createFileMap(pdfFiles), [pdfFiles])
+  const fileUrlMap = React.useMemo(() => createFileUrlMap(pdfFiles), [pdfFiles])
 
-  const fileInfoMap = React.useMemo(() => {
-    const map = new Map<string, PdfFile>()
-    pdfFiles.forEach(file => {
-      map.set(file.id, file)
+  // Memoize final page number calculations to avoid recalculating on every render
+  const finalPageNumberMap = React.useMemo(() => {
+    const map = new Map<number, number | null>()
+    let finalPageNum = 0
+    pageOrder.forEach((unifiedPageNumber, index) => {
+      if (!deletedPages.has(unifiedPageNumber)) {
+        finalPageNum++
+        map.set(unifiedPageNumber, finalPageNum)
+      } else {
+        map.set(unifiedPageNumber, null)
+      }
     })
     return map
-  }, [pdfFiles])
-
-  const fileUrlMap = React.useMemo(() => {
-    const map = new Map<string, string>()
-    pdfFiles.forEach(file => {
-      map.set(file.id, file.url)
-    })
-    return map
-  }, [pdfFiles])
+  }, [pageOrder, deletedPages])
 
   // Get page info for display
   const getPageInfo = (unifiedPageNumber: number) => {
@@ -153,6 +156,10 @@ function PdfPageGridComponent({
 
   const getFileInfo = (fileId: string) => {
     return fileInfoMap.get(fileId)
+  }
+
+  const getFinalPageNumber = (unifiedPageNumber: number): number | null => {
+    return finalPageNumberMap.get(unifiedPageNumber) ?? null
   }
 
   if (pageOrder.length === 0) {
@@ -191,11 +198,7 @@ function PdfPageGridComponent({
         const isDeleted = deletedPages.has(unifiedPageNumber)
         const rotation = pageRotations[unifiedPageNumber] || 0
         const hasRotation = rotation !== 0
-        
-        // Calculate final page number (position in final PDF, excluding deleted pages)
-        const finalPageNumber = isDeleted 
-          ? null 
-          : pageOrder.slice(0, index + 1).filter(p => !deletedPages.has(p)).length
+        const finalPageNumber = getFinalPageNumber(unifiedPageNumber)
 
         const actions = [
           // Reorder buttons
@@ -278,7 +281,7 @@ function PdfPageGridComponent({
           },
         ]
 
-        const containerStyle = fileInfo.color 
+        const containerStyle = fileInfo?.color 
           ? { 
               backgroundColor: addOklchAlpha(fileInfo.color, 0.15)
             } 
@@ -357,5 +360,61 @@ function PdfPageGridComponent({
 }
 
 // Memoize component to prevent unnecessary re-renders
-export const PdfPageGrid = React.memo(PdfPageGridComponent)
+// Custom comparison function to optimize re-renders
+export const PdfPageGrid = React.memo(PdfPageGridComponent, (prevProps, nextProps) => {
+  // Compare primitive values
+  if (
+    prevProps.isProcessing !== nextProps.isProcessing ||
+    prevProps.columns !== nextProps.columns ||
+    prevProps.pageOrder.length !== nextProps.pageOrder.length ||
+    prevProps.pdfFiles.length !== nextProps.pdfFiles.length ||
+    prevProps.unifiedPages.length !== nextProps.unifiedPages.length ||
+    prevProps.deletedPages.size !== nextProps.deletedPages.size ||
+    Object.keys(prevProps.pageRotations).length !== Object.keys(nextProps.pageRotations).length
+  ) {
+    return false // Props changed, re-render
+  }
+
+  // Deep comparison for arrays and objects (shallow check is usually sufficient)
+  // If order changed, we need to re-render
+  if (prevProps.pageOrder.some((val, idx) => val !== nextProps.pageOrder[idx])) {
+    return false
+  }
+
+  // Check if deleted pages changed
+  for (const pageNum of prevProps.deletedPages) {
+    if (!nextProps.deletedPages.has(pageNum)) {
+      return false
+    }
+  }
+  for (const pageNum of nextProps.deletedPages) {
+    if (!prevProps.deletedPages.has(pageNum)) {
+      return false
+    }
+  }
+
+  // Check if rotations changed
+  const prevRotationKeys = Object.keys(prevProps.pageRotations)
+  const nextRotationKeys = Object.keys(nextProps.pageRotations)
+  if (prevRotationKeys.length !== nextRotationKeys.length) {
+    return false
+  }
+  for (const key of prevRotationKeys) {
+    if (prevProps.pageRotations[Number(key)] !== nextProps.pageRotations[Number(key)]) {
+      return false
+    }
+  }
+
+  // Functions are compared by reference - if they're stable, this is fine
+  // If they changed, we want to re-render anyway
+  return (
+    prevProps.onReorder === nextProps.onReorder &&
+    prevProps.onToggleDelete === nextProps.onToggleDelete &&
+    prevProps.onRotate === nextProps.onRotate &&
+    prevProps.onResetRotation === nextProps.onResetRotation &&
+    prevProps.onExtract === nextProps.onExtract &&
+    prevProps.pdfFiles === nextProps.pdfFiles &&
+    prevProps.unifiedPages === nextProps.unifiedPages
+  )
+})
 

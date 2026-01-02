@@ -44,7 +44,13 @@ export async function convertImageToPdf(file: File): Promise<PDFDocument> {
   const mimeType = file.type.toLowerCase()
   const fileName = file.name.toLowerCase()
   
-  let imageEmbed: { embed: Awaited<ReturnType<typeof pdf.embedPng>> | Awaited<ReturnType<typeof pdf.embedJpg>>; width: number; height: number }
+  type ImageEmbed = {
+    embed: Awaited<ReturnType<typeof pdf.embedPng>> | Awaited<ReturnType<typeof pdf.embedJpg>>
+    width: number
+    height: number
+  }
+  
+  let imageEmbed: ImageEmbed
   
   try {
     // Try PNG first
@@ -149,5 +155,43 @@ export async function extractPageFromPdf(
   const [copiedPage] = await newPdf.copyPages(pdf, [pageIndex])
   newPdf.addPage(copiedPage)
   return newPdf
+}
+
+/**
+ * Loads a file (PDF or image) and creates a blob URL for preview.
+ * For images, converts them to PDF. For PDFs, loads them directly.
+ * 
+ * @param file - The file to load (PDF or image)
+ * @param isPdf - Whether the file is a PDF (true) or image (false)
+ * @returns Promise that resolves to an object containing the PDF document, blob URL, and file type
+ * @throws Error if the file cannot be loaded or converted
+ */
+export async function loadFileWithPreview(
+  file: File,
+  isPdf: boolean
+): Promise<{
+  pdf: PDFDocument
+  url: string
+  fileType: 'pdf' | 'image'
+}> {
+  let pdf: PDFDocument
+  let fileType: 'pdf' | 'image'
+  let blob: Blob
+
+  if (isPdf) {
+    // Handle PDF files
+    blob = new Blob([file], { type: "application/pdf" })
+    pdf = await loadPdfFromFile(file)
+    fileType = 'pdf'
+  } else {
+    // Handle image files - convert to PDF
+    blob = new Blob([file], { type: file.type })
+    pdf = await convertImageToPdf(file)
+    fileType = 'image'
+  }
+
+  const url = URL.createObjectURL(blob)
+
+  return { pdf, url, fileType }
 }
 

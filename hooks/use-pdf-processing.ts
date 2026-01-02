@@ -10,6 +10,7 @@ import { formatPdfError } from "@/lib/pdf-errors"
 import { downloadBlob } from "@/lib/file-download"
 import { applyPageRotation } from "@/lib/pdf-rotation"
 import { extractPageFromPdf } from "@/lib/pdf-utils"
+import { createPageMap, createFileMap } from "@/lib/pdf-lookup-utils"
 import { DELAYS, TIMEOUTS } from "@/lib/constants"
 import { logger } from "@/lib/logger"
 
@@ -89,10 +90,16 @@ export function usePdfProcessing({
     }
 
     const page = unifiedPages.find(p => p.unifiedPageNumber === unifiedPageNumber)
-    if (!page) return
+    if (!page) {
+      onError("Page not found.")
+      return
+    }
 
     const file = pdfFiles.find(f => f.id === page.fileId)
-    if (!file) return
+    if (!file) {
+      onError("File not found for page.")
+      return
+    }
 
     setIsProcessing(true)
     onError(null)
@@ -176,26 +183,14 @@ export function usePdfProcessing({
       const mergedPdf = await PDFDocument.create()
 
       // Create lookup maps for O(1) access instead of O(n) Array.find()
-      const pageMap = new Map<number, UnifiedPage>()
-      unifiedPages.forEach(page => {
-        pageMap.set(page.unifiedPageNumber, page)
-      })
-
-      const fileMap = new Map<string, PdfFile>()
-      pdfFiles.forEach(file => {
-        fileMap.set(file.id, file)
-      })
+      const pageMap = createPageMap(unifiedPages)
+      const fileMap = createFileMap(pdfFiles)
 
       // Adaptive batch size: smaller batches for large documents to keep UI responsive
       // Larger batches for small documents to improve throughput
-      const getBatchSize = (totalPages: number): number => {
-        if (totalPages <= 10) return 10
-        if (totalPages <= 50) return 8
-        if (totalPages <= 100) return 5
-        return 3 // Smaller batches for very large documents
-      }
-
-      const BATCH_SIZE = getBatchSize(activePages.length)
+      // Calculate batch size based on total pages (simple calculation, no memoization needed)
+      const totalPages = activePages.length
+      const BATCH_SIZE = totalPages <= 10 ? 10 : totalPages <= 50 ? 8 : totalPages <= 100 ? 5 : 3
       
       for (let i = 0; i < activePages.length; i += BATCH_SIZE) {
         const batch = activePages.slice(i, i + BATCH_SIZE)
@@ -211,6 +206,11 @@ export function usePdfProcessing({
               const file = fileMap.get(page.fileId)
               if (!file) {
                 throw new Error(`File not found for page ${unifiedPageNum}`)
+              }
+
+              // Validate file has required properties
+              if (!file.id || !file.file || !file.type) {
+                throw new Error(`Invalid file data for page ${unifiedPageNum}`)
               }
 
               try {

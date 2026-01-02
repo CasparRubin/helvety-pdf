@@ -1,10 +1,16 @@
 "use client"
 
+// React
 import * as React from "react"
+
+// Next.js
 import Image from "next/image"
 import Link from "next/link"
+
+// External libraries
 import { Github, Info } from "lucide-react"
 
+// Internal components
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { Button } from "@/components/ui/button"
 import {
@@ -55,7 +61,7 @@ export function Navbar() {
                 priority
               />
             </a>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <Link href="/" className="text-xl font-black tracking-tight hover:opacity-80 transition-opacity">
                 PDF
               </Link>

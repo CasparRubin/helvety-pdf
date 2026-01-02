@@ -5,12 +5,12 @@ import { cn, debounce } from "@/lib/utils"
 import { FileTextIcon, AlertCircle } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useScreenSize } from "@/hooks/use-screen-size"
+import { useProgressiveQuality } from "@/hooks/use-progressive-quality"
 import { logger } from "@/lib/logger"
 import { 
   THUMBNAIL_QUALITY, 
   THUMBNAIL_DIMENSIONS, 
   INTERSECTION_OBSERVER,
-  QUALITY_UPGRADE,
   PDF_RENDER
 } from "@/lib/constants"
 
@@ -104,13 +104,22 @@ function PdfPageThumbnailComponent({
   const [isVisible, setIsVisible] = React.useState(false)
   const [shouldUnmount, setShouldUnmount] = React.useState(false)
   const [devicePixelRatio, setDevicePixelRatio] = React.useState(1.0)
-  const [isHighQuality, setIsHighQuality] = React.useState(false)
   const containerRef = React.useRef<HTMLDivElement>(null)
   const thumbnailRef = React.useRef<HTMLDivElement>(null)
   const renderRetryCountRef = React.useRef(0)
-  const qualityUpgradeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
-  const qualityUpgradeIdleCallbackRef = React.useRef<number | null>(null)
   const { screenSize } = useScreenSize()
+  
+  // Progressive quality management
+  const {
+    isHighQuality,
+    setIsHighQuality,
+    qualityUpgradeTimeoutRef,
+    qualityUpgradeIdleCallbackRef,
+  } = useProgressiveQuality({
+    isVisible,
+    shouldUnmount,
+    fileType,
+  })
 
   /**
    * Calculates optimal device pixel ratio based on screen size, container width, and total pages.
@@ -237,14 +246,7 @@ function PdfPageThumbnailComponent({
       clearTimeout(timeoutRef.current)
       timeoutRef.current = null
     }
-    if (qualityUpgradeTimeoutRef.current) {
-      clearTimeout(qualityUpgradeTimeoutRef.current)
-      qualityUpgradeTimeoutRef.current = null
-    }
-    if (qualityUpgradeIdleCallbackRef.current !== null && 'cancelIdleCallback' in window) {
-      cancelIdleCallback(qualityUpgradeIdleCallbackRef.current)
-      qualityUpgradeIdleCallbackRef.current = null
-    }
+    // Quality upgrade cleanup is handled by the hook
   }, [fileUrl])
 
   // Intersection Observer for lazy loading and memory management
@@ -258,48 +260,6 @@ function PdfPageThumbnailComponent({
         if (entry.isIntersecting) {
           setIsVisible(true)
           setShouldUnmount(false)
-          
-          // Clear any pending quality upgrade timeout and idle callback
-          if (qualityUpgradeTimeoutRef.current) {
-            clearTimeout(qualityUpgradeTimeoutRef.current)
-            qualityUpgradeTimeoutRef.current = null
-          }
-          if (qualityUpgradeIdleCallbackRef.current !== null && 'cancelIdleCallback' in window && typeof window.cancelIdleCallback === 'function') {
-            window.cancelIdleCallback(qualityUpgradeIdleCallbackRef.current)
-            qualityUpgradeIdleCallbackRef.current = null
-          }
-          
-          // Start progressive quality loading if not already high quality
-          // Use requestIdleCallback for better performance when browser is idle
-          if (!isHighQuality && fileType !== 'image') {
-            const upgradeQuality = () => {
-              setIsHighQuality(true)
-              qualityUpgradeTimeoutRef.current = null
-              qualityUpgradeIdleCallbackRef.current = null
-            }
-            
-            if ('requestIdleCallback' in window && typeof window.requestIdleCallback === 'function') {
-              // Use requestIdleCallback if available for better performance
-              const idleCallbackId = window.requestIdleCallback(
-                () => {
-                  upgradeQuality()
-                },
-                { timeout: QUALITY_UPGRADE.DELAY }
-              )
-              qualityUpgradeIdleCallbackRef.current = idleCallbackId
-              // Fallback timeout in case idle callback doesn't fire
-              qualityUpgradeTimeoutRef.current = setTimeout(() => {
-                if (qualityUpgradeIdleCallbackRef.current !== null && 'cancelIdleCallback' in window && typeof window.cancelIdleCallback === 'function') {
-                  window.cancelIdleCallback(qualityUpgradeIdleCallbackRef.current)
-                  qualityUpgradeIdleCallbackRef.current = null
-                }
-                upgradeQuality()
-              }, QUALITY_UPGRADE.DELAY)
-            } else {
-              // Fallback to setTimeout
-              qualityUpgradeTimeoutRef.current = setTimeout(upgradeQuality, QUALITY_UPGRADE.DELAY)
-            }
-          }
         } else {
           // Unmount when far off-screen to free memory
           // Calculate distance from viewport
@@ -314,15 +274,6 @@ function PdfPageThumbnailComponent({
           
           if (isFarAbove || isFarBelow) {
             setShouldUnmount(true)
-            setIsHighQuality(false)
-            if (qualityUpgradeTimeoutRef.current) {
-              clearTimeout(qualityUpgradeTimeoutRef.current)
-              qualityUpgradeTimeoutRef.current = null
-            }
-            if (qualityUpgradeIdleCallbackRef.current !== null && 'cancelIdleCallback' in window) {
-              cancelIdleCallback(qualityUpgradeIdleCallbackRef.current)
-              qualityUpgradeIdleCallbackRef.current = null
-            }
           }
         }
       },
@@ -336,11 +287,8 @@ function PdfPageThumbnailComponent({
 
     return () => {
       observer.unobserve(element)
-      if (qualityUpgradeTimeoutRef.current) {
-        clearTimeout(qualityUpgradeTimeoutRef.current)
-      }
     }
-  }, [isHighQuality, fileType])
+  }, [])
 
   // Measure container width and update page width dynamically
   // This ensures pages (PDFs and images) always display at full width regardless of column count,

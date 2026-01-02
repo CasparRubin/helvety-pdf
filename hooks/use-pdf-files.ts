@@ -7,7 +7,8 @@ import { PDFDocument } from "pdf-lib"
 // Internal utilities
 import { getPdfColor } from "@/lib/pdf-colors"
 import { formatPdfError } from "@/lib/pdf-errors"
-import { loadPdfFromFile, convertImageToPdf } from "@/lib/pdf-utils"
+import { loadFileWithPreview, convertImageToPdf, loadPdfFromFile } from "@/lib/pdf-utils"
+import { validateFileType, validateFileSize, isPdfFile, isImageFile } from "@/lib/file-validation"
 import { logger } from "@/lib/logger"
 import { FILE_LIMITS } from "@/lib/constants"
 
@@ -151,26 +152,23 @@ export function usePdfFiles(): UsePdfFilesReturn {
     }
 
     for (const file of fileArray) {
-      const isPdf = file.type === "application/pdf"
-      const isImage = file.type.startsWith("image/")
-
-      if (!isPdf && !isImage) {
-        validationErrors.push(`'${file.name}' is not a PDF or image file.`)
+      // Validate file type
+      const typeValidation = validateFileType(file)
+      if (!typeValidation.valid) {
+        validationErrors.push(typeValidation.error || `'${file.name}' is not a supported file type.`)
         continue
       }
 
-      // File size validation
-      if (file.size > FILE_LIMITS.MAX_FILE_SIZE) {
-        const maxSizeMB = (FILE_LIMITS.MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)
-        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2)
-        validationErrors.push(`'${file.name}' is too large (${fileSizeMB} MB). Maximum file size is ${maxSizeMB} MB.`)
+      // Validate file size
+      const sizeValidation = validateFileSize(file)
+      if (!sizeValidation.valid) {
+        validationErrors.push(sizeValidation.error || `'${file.name}' has an invalid file size.`)
         continue
       }
 
-      if (file.size === 0) {
-        validationErrors.push(`'${file.name}' is empty.`)
-        continue
-      }
+      // Determine file type after validation
+      const isPdf = isPdfFile(file)
+      const isImage = isImageFile(file)
 
       if (pdfFiles.some((pf) => pf.file.name === file.name && pf.file.size === file.size)) {
         validationErrors.push(`'${file.name}' is already added.`)
@@ -179,23 +177,9 @@ export function usePdfFiles(): UsePdfFilesReturn {
 
       let url: string | null = null
       try {
-        let pdf: PDFDocument
-        let fileType: 'pdf' | 'image'
-        let blob: Blob
-
-        if (isPdf) {
-          // Handle PDF files
-          blob = new Blob([file], { type: "application/pdf" })
-          url = URL.createObjectURL(blob)
-          pdf = await loadPdfFromFile(file)
-          fileType = 'pdf'
-        } else {
-          // Handle image files - convert to PDF
-          blob = new Blob([file], { type: file.type })
-          url = URL.createObjectURL(blob)
-          pdf = await convertImageToPdf(file)
-          fileType = 'image'
-        }
+        // Use shared utility to load file and create preview URL
+        const { pdf, url: previewUrl, fileType } = await loadFileWithPreview(file, isPdf)
+        url = previewUrl
 
         const count = pdf.getPageCount()
 
@@ -223,7 +207,7 @@ export function usePdfFiles(): UsePdfFilesReturn {
         pdfFilesToAdd.push({
           id: fileId,
           file,
-          url: url!, // url is guaranteed to be set at this point
+          url: url, // url is guaranteed to be set at this point
           pageCount: count,
           color,
           type: fileType,
@@ -276,26 +260,30 @@ export function usePdfFiles(): UsePdfFilesReturn {
   }, [pdfFiles])
 
   const removeFile = React.useCallback((fileId: string): void => {
-    const file = pdfFiles.find(f => f.id === fileId)
-    if (file) {
-      URL.revokeObjectURL(file.url)
-    }
-    // Clear PDF from cache
-    pdfCacheRef.current.delete(fileId)
-    setPdfFiles((prev) => prev.filter((f) => f.id !== fileId))
-  }, [pdfFiles])
+    setPdfFiles((prev) => {
+      const file = prev.find(f => f.id === fileId)
+      if (file) {
+        URL.revokeObjectURL(file.url)
+      }
+      // Clear PDF from cache
+      pdfCacheRef.current.delete(fileId)
+      return prev.filter((f) => f.id !== fileId)
+    })
+  }, [])
 
   const clearAll = React.useCallback((): void => {
-    // Clean up all blob URLs
-    pdfFiles.forEach(file => {
-      URL.revokeObjectURL(file.url)
+    setPdfFiles((prev) => {
+      // Clean up all blob URLs
+      prev.forEach(file => {
+        URL.revokeObjectURL(file.url)
+      })
+      // Clear PDF cache
+      pdfCacheRef.current.clear()
+      return []
     })
-    // Clear PDF cache
-    pdfCacheRef.current.clear()
-    setPdfFiles([])
     setUnifiedPages([])
     setPageOrder([])
-  }, [pdfFiles])
+  }, [])
 
   return {
     pdfFiles,
