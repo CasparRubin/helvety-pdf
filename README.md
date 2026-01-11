@@ -1,6 +1,6 @@
 # Helvety PDF
 
-![Next.js](https://img.shields.io/badge/Next.js-16.1.0-black?style=flat-square&logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black?style=flat-square&logo=next.js)
 ![React](https://img.shields.io/badge/React-19.2.3-61DAFB?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
@@ -35,7 +35,7 @@ A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract 
 
 This project is built with modern web technologies:
 
-- **[Next.js 16.1.0](https://nextjs.org/)** - React framework with App Router
+- **[Next.js 16.1.1](https://nextjs.org/)** - React framework with App Router
 - **[React 19.2.3](https://react.dev/)** - UI library
 - **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
 - **[pdf-lib](https://pdf-lib.js.org/)** - PDF manipulation and creation
@@ -56,10 +56,13 @@ helvety-pdf/
 │   ├── icon.svg           # App icon
 │   ├── layout.tsx         # Root layout component
 │   ├── page.tsx           # Main page component
+│   ├── privacy/           # Privacy policy page
+│   ├── terms/             # Terms of service page
 │   ├── robots.ts          # Robots.txt configuration
 │   └── sitemap.ts         # Sitemap configuration
 ├── components/            # React components
 │   ├── ui/               # shadcn/ui component library
+│   ├── error-boundary.tsx # Error boundary component
 │   ├── navbar.tsx         # Navigation bar
 │   ├── helvety-pdf.tsx    # Main PDF management component
 │   ├── pdf-page-grid.tsx  # PDF page grid layout
@@ -70,18 +73,26 @@ helvety-pdf/
 │   └── theme-switcher.tsx # Dark/light mode switcher
 ├── hooks/                 # Custom React hooks
 │   ├── use-columns.ts     # Column layout management hook
+│   ├── use-drag-drop.ts   # Drag and drop functionality hook
+│   ├── use-error-handler.ts # Error handling hook
+│   ├── use-pdf-files.ts   # PDF file management hook
+│   ├── use-pdf-processing.ts # PDF processing operations hook
+│   ├── use-progressive-quality.ts # Progressive quality rendering hook
 │   └── use-screen-size.ts # Screen size detection hook
 ├── lib/                   # Utility functions
 │   ├── constants.ts       # Application constants
 │   ├── file-download.ts   # File download utilities
+│   ├── file-validation.ts # File validation utilities
+│   ├── logger.ts          # Logging utilities
 │   ├── pdf-colors.ts      # PDF color utilities
 │   ├── pdf-errors.ts      # PDF error formatting
+│   ├── pdf-lookup-utils.ts # PDF lookup utilities
 │   ├── pdf-rotation.ts    # PDF page rotation utilities
 │   ├── pdf-utils.ts       # PDF loading and extraction
 │   ├── types.ts           # TypeScript type definitions
 │   └── utils.ts           # General utility functions
 ├── public/                # Static assets
-│   ├── pdf.worker.min.mjs # PDF.js worker file
+│   ├── pdf.worker.min.mjs # PDF.js worker file (auto-synced via postinstall script)
 │   └── *.svg              # Logo and branding assets
 └── [config files]         # Configuration files (Next.js, TypeScript, etc.)
 ```

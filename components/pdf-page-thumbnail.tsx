@@ -166,7 +166,8 @@ function PdfPageThumbnailComponent({
    * Uses a module-level promise to ensure only one worker is initialized.
    * 
    * The worker is configured to use a local worker file from the public folder,
-   * which matches the version of pdfjs-dist used by react-pdf.
+   * which is automatically kept in sync with the installed pdfjs-dist version via
+   * the postinstall script in package.json.
    * 
    * @returns A Promise that resolves when the worker is ready, or rejects on error
    * @throws Error if window is not available (SSR environment)
@@ -184,7 +185,9 @@ function PdfPageThumbnailComponent({
     // Create and cache the initialization Promise
     workerInitPromise = import("react-pdf")
       .then((mod) => {
-        // Use local worker file from public folder (version matches react-pdf's pdfjs-dist)
+        // Use local worker file from public folder (updated to match pdfjs-dist version)
+        // The worker file should be copied from node_modules/pdfjs-dist/build/pdf.worker.min.mjs
+        // to public/pdf.worker.min.mjs to ensure version matching
         mod.pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
         // Wait a bit to ensure worker is fully initialized
         return new Promise<void>((resolve) => {
