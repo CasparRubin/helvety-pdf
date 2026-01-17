@@ -23,7 +23,7 @@ export default function TermsPage() {
         <div className="mb-8 p-4 border border-destructive/50 bg-destructive/5 rounded-lg">
           <h2 className="text-xl font-bold mb-4">Important Notice</h2>
           <p className="mb-4">
-            <strong>This is an experimental service provided "AS IS" with NO WARRANTIES.</strong> By using this service, you acknowledge that you use it entirely at your own risk. Helvety assumes NO LIABILITY for data loss, security breaches, service interruptions, or any other damages. You are solely responsible for your data and its backups.
+            <strong>This is an experimental service provided &quot;AS IS&quot; with NO WARRANTIES.</strong> By using this service, you acknowledge that you use it entirely at your own risk. Helvety assumes NO LIABILITY for data loss, security breaches, service interruptions, or any other damages. You are solely responsible for your data and its backups.
           </p>
           <p className="mb-0">
             ⚠️ <strong>YOU MUST READ THE COMPLETE TERMS OF SERVICE BELOW TO USE THIS SERVICE.</strong> By using this service, you acknowledge that you have read, understood, and agree to be bound by all terms, disclaimers, and limitations set forth in the complete Terms of Service.
@@ -36,7 +36,7 @@ export default function TermsPage() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
           <p>
-            By accessing or using Helvety PDF (the "Service"), you acknowledge that you have read, understood, and agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you must not use the Service. Your use of the Service constitutes your acceptance of these Terms and your acknowledgment that you understand and accept all risks associated with using an experimental service.
+            By accessing or using Helvety PDF (the &quot;Service&quot;), you acknowledge that you have read, understood, and agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree to these Terms, you must not use the Service. Your use of the Service constitutes your acceptance of these Terms and your acknowledgment that you understand and accept all risks associated with using an experimental service.
           </p>
         </section>
 
@@ -52,10 +52,10 @@ export default function TermsPage() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">3. NO WARRANTY</h2>
           <p className="font-semibold mb-2">
-            THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT ANY WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE.
+            THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT ANY WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE.
           </p>
           <p className="mb-2">
-            Helvety and its affiliates, officers, directors, employees, agents, and licensors (collectively, "Helvety") hereby disclaim all warranties, including but not limited to:
+            Helvety and its affiliates, officers, directors, employees, agents, and licensors (collectively, &quot;Helvety&quot;) hereby disclaim all warranties, including but not limited to:
           </p>
           <ul className="list-disc pl-6 mb-2">
             <li>Warranties of merchantability, fitness for a particular purpose, or non-infringement</li>
@@ -90,7 +90,7 @@ export default function TermsPage() {
             THIS LIMITATION OF LIABILITY APPLIES REGARDLESS OF THE THEORY OF LIABILITY, WHETHER BASED ON CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, OR OTHERWISE, EVEN IF HELVETY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
           </p>
           <p>
-            In jurisdictions that do not allow the exclusion or limitation of liability for consequential or incidental damages, Helvety's liability shall be limited to the maximum extent permitted by law. In no event shall Helvety's total liability exceed zero Swiss Francs (CHF 0.00).
+            In jurisdictions that do not allow the exclusion or limitation of liability for consequential or incidental damages, Helvety&apos;s liability shall be limited to the maximum extent permitted by law. In no event shall Helvety&apos;s total liability exceed zero Swiss Francs (CHF 0.00).
           </p>
         </section>
 
@@ -174,7 +174,7 @@ export default function TermsPage() {
           </ul>
           <p className="font-semibold mb-2">RESPONSIBLE DISCLOSURE OF VULNERABILITIES:</p>
           <p className="mb-2">
-            If you discover any security vulnerability, bug, or security flaw in the Service, you <strong>MUST</strong> immediately report it to Helvety at contact@helvety.com with the subject line "Security Vulnerability Report". You agree to:
+            If you discover any security vulnerability, bug, or security flaw in the Service, you <strong>MUST</strong> immediately report it to Helvety at contact@helvety.com with the subject line &quot;Security Vulnerability Report&quot;. You agree to:
           </p>
           <ul className="list-disc pl-6 mb-2">
             <li>Provide detailed information about the vulnerability, including steps to reproduce it</li>
@@ -195,15 +195,34 @@ export default function TermsPage() {
 
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">10. Third-Party Services</h2>
-          <p>
+          <p className="mb-2">
             The Service may use, integrate with, or depend on third-party services, technologies, or libraries, including but not limited to hosting providers, content delivery networks (CDNs), JavaScript libraries, PDF processing libraries, and other service providers. Helvety makes no warranties or representations regarding third-party services and shall not be liable for any issues, failures, or problems arising from or related to third-party services, including but not limited to data breaches, service interruptions, or changes to third-party service terms.
+          </p>
+          <p className="mb-2 font-semibold">
+            IMPORTANT: Hosting Infrastructure and Vercel
+          </p>
+          <p className="mb-2">
+            This Service is hosted on Vercel&apos;s infrastructure with geolocation set to Switzerland. <strong>Helvety has no control over Vercel&apos;s operations, data collection practices, tracking mechanisms, analytics, logging, or any other activities that Vercel may perform.</strong>
+          </p>
+          <p className="mb-2">
+            You acknowledge and understand that:
+          </p>
+          <ul className="list-disc pl-6 mb-2">
+            <li>Vercel may collect, store, transmit, or analyze data in ways that are beyond Helvety&apos;s control</li>
+            <li>Vercel may use tracking technologies, analytics, or monitoring tools that Helvety cannot control or disable</li>
+            <li>Vercel may log access requests, IP addresses, or other connection metadata</li>
+            <li>Vercel&apos;s privacy practices, terms of service, and data handling are governed by Vercel&apos;s own policies, not by Helvety</li>
+            <li>Helvety cannot guarantee or take responsibility for what Vercel does with any data, metadata, or information that passes through or is stored on Vercel&apos;s infrastructure</li>
+          </ul>
+          <p className="font-semibold">
+            HELVETY ASSUMES NO RESPONSIBILITY OR LIABILITY FOR ANY DATA COLLECTION, TRACKING, LOGGING, ANALYTICS, OR OTHER ACTIVITIES PERFORMED BY VERCEL OR ANY OTHER THIRD-PARTY HOSTING PROVIDER. You use this Service with the understanding that hosting infrastructure is operated by third parties over which Helvety has no control.
           </p>
         </section>
 
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">11. Indemnification</h2>
           <p>
-            You agree to indemnify, defend, and hold harmless Helvety and its affiliates, officers, directors, employees, agents, and licensors from and against any and all claims, damages, obligations, losses, liabilities, costs, and expenses (including reasonable attorneys' fees) arising from or related to:
+            You agree to indemnify, defend, and hold harmless Helvety and its affiliates, officers, directors, employees, agents, and licensors from and against any and all claims, damages, obligations, losses, liabilities, costs, and expenses (including reasonable attorneys&apos; fees) arising from or related to:
           </p>
           <ul className="list-disc pl-6">
             <li>Your use of the Service</li>
@@ -223,7 +242,7 @@ export default function TermsPage() {
           </p>
           <p className="mb-2 font-semibold">FOR USERS IN THE UNITED STATES:</p>
           <p className="mb-2">
-            These Terms are subject to applicable federal and state laws, including but not limited to consumer protection laws. However, to the maximum extent permitted by law, you acknowledge that the experimental nature of the Service and the comprehensive disclaimers contained herein may limit or exclude certain consumer protection rights that would otherwise apply. If you are a resident of California, you waive California Civil Code Section 1542, which states: "A general release does not extend to claims that the creditor or releasing party does not know or suspect to exist in his or her favor at the time of executing the release and that, if known by him or her, would have materially affected his or her settlement with the debtor or released party."
+            These Terms are subject to applicable federal and state laws, including but not limited to consumer protection laws. However, to the maximum extent permitted by law, you acknowledge that the experimental nature of the Service and the comprehensive disclaimers contained herein may limit or exclude certain consumer protection rights that would otherwise apply. If you are a resident of California, you waive California Civil Code Section 1542, which states: &quot;A general release does not extend to claims that the creditor or releasing party does not know or suspect to exist in his or her favor at the time of executing the release and that, if known by him or her, would have materially affected his or her settlement with the debtor or released party.&quot;
           </p>
           <p className="font-semibold">FOR USERS IN THE EUROPEAN UNION:</p>
           <p>
@@ -299,6 +318,15 @@ export default function TermsPage() {
           <Link href="/privacy" className="text-primary hover:underline">
             Privacy Policy
           </Link>
+          <span className="mx-2">•</span>
+          <a
+            href="https://helvety.com/legal-notice"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            Helvety (Legal Notice)
+          </a>
           <span className="mx-2">•</span>
           <Link href="/" className="text-primary hover:underline">
             Back to Home

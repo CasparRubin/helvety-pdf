@@ -23,7 +23,7 @@ export default function PrivacyPage() {
         <div className="mb-8 p-4 border border-destructive/50 bg-destructive/5 rounded-lg">
           <h2 className="text-xl font-bold mb-4">Important Notice</h2>
           <p className="mb-4">
-            <strong>This is an experimental service provided "AS IS" with NO WARRANTIES.</strong> By using this service, you acknowledge that you use it entirely at your own risk. Helvety assumes NO LIABILITY for data loss, security breaches, service interruptions, or any other damages. You are solely responsible for your data and its backups.
+            <strong>This is an experimental service provided &quot;AS IS&quot; with NO WARRANTIES.</strong> By using this service, you acknowledge that you use it entirely at your own risk. Helvety assumes NO LIABILITY for data loss, security breaches, service interruptions, or any other damages. You are solely responsible for your data and its backups.
           </p>
           <p className="mb-0">
             ⚠️ <strong>YOU MUST READ THE COMPLETE PRIVACY POLICY BELOW TO USE THIS SERVICE.</strong> By using this service, you acknowledge that you have read, understood, and agree to be bound by all terms, disclaimers, and limitations set forth in the complete Privacy Policy.
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
           <p className="mb-2">
-            This Privacy Policy describes how Helvety PDF (the "Service") handles information in connection with your use of the Service. This Privacy Policy applies to all users of the Service.
+            This Privacy Policy describes how Helvety PDF (the &quot;Service&quot;) handles information in connection with your use of the Service. This Privacy Policy applies to all users of the Service.
           </p>
           <p>
             <strong>IMPORTANT:</strong> The Service is provided in an experimental and alpha stage. This Privacy Policy contains important disclaimers and limitations regarding data protection, privacy, and security. Please read this Privacy Policy carefully before using the Service.
@@ -52,7 +52,7 @@ export default function PrivacyPage() {
             <li>All PDF and image files you upload are processed locally in your browser</li>
             <li>No files, data, or content are transmitted to any server</li>
             <li>No files, data, or content are stored on any server</li>
-            <li>All processing occurs on your device using your device's resources</li>
+            <li>All processing occurs on your device using your device&apos;s resources</li>
           </ul>
           <p>
             However, you acknowledge that even with client-side processing, there may be risks associated with using web-based applications, and Helvety makes no guarantees regarding the security, privacy, or confidentiality of your data.
@@ -120,8 +120,28 @@ export default function PrivacyPage() {
           <p className="mb-2">
             Helvety makes no warranties or representations regarding third-party services and shall not be liable for any privacy breaches, data collection, or security issues arising from or related to third-party services.
           </p>
+          <p className="mb-2 font-semibold">
+            IMPORTANT: Hosting Infrastructure and Vercel
+          </p>
+          <p className="mb-2">
+            This Service is hosted on Vercel&apos;s infrastructure with geolocation set to Switzerland. <strong>Helvety has no control over Vercel&apos;s operations, data collection practices, tracking mechanisms, analytics, logging, or any other activities that Vercel may perform.</strong>
+          </p>
+          <p className="mb-2">
+            You acknowledge and understand that:
+          </p>
+          <ul className="list-disc pl-6 mb-2">
+            <li>Vercel may collect, store, transmit, or analyze data in ways that are beyond Helvety&apos;s control</li>
+            <li>Vercel may use tracking technologies, analytics, or monitoring tools that Helvety cannot control or disable</li>
+            <li>Vercel may log access requests, IP addresses, or other connection metadata</li>
+            <li>Vercel&apos;s privacy practices, terms of service, and data handling are governed by Vercel&apos;s own policies, not by Helvety</li>
+            <li>Helvety cannot guarantee or take responsibility for what Vercel does with any data, metadata, or information that passes through or is stored on Vercel&apos;s infrastructure</li>
+            <li>Even though file processing happens in your browser, Vercel may still collect connection metadata, IP addresses, request headers, or other information related to your use of the Service</li>
+          </ul>
+          <p className="font-semibold mb-2">
+            HELVETY ASSUMES NO RESPONSIBILITY OR LIABILITY FOR ANY DATA COLLECTION, TRACKING, LOGGING, ANALYTICS, OR OTHER ACTIVITIES PERFORMED BY VERCEL OR ANY OTHER THIRD-PARTY HOSTING PROVIDER.
+          </p>
           <p>
-            You acknowledge that third-party services may collect, store, transmit, or analyze data in ways that are beyond Helvety's control, and Helvety assumes no responsibility or liability for such activities.
+            You acknowledge that third-party services may collect, store, transmit, or analyze data in ways that are beyond Helvety&apos;s control, and Helvety assumes no responsibility or liability for such activities. You use this Service with the understanding that hosting infrastructure is operated by third parties over which Helvety has no control.
           </p>
         </section>
 

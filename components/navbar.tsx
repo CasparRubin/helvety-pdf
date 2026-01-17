@@ -143,94 +143,21 @@ export function Navbar() {
       </nav>
 
       <Dialog open={isAboutOpen && shouldShowDialog} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto [&>button:first-child]:hidden">
+        <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto [&>button:first-child]:hidden">
           <DialogHeader>
             <DialogTitle>About</DialogTitle>
           </DialogHeader>
-          <div className="space-y-6 pt-6">
-            <div>
-              <h3 className="text-base font-medium mb-2">Client-Side Processing</h3>
-              <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                <p>
-                  All file processing (PDFs and images) happens entirely in your browser. No data is sent to any server. This means your files stay completely private, but performance depends on your device's capabilities.
-                </p>
-              </div>
+          <div className="space-y-4 pt-4">
+            <div className="text-sm text-muted-foreground">
+              <ul className="list-disc pl-5 space-y-1">
+                <li>All processing happens in your browser</li>
+                <li>No data leaves your device</li>
+                <li>Merge, rotate, and organize PDFs</li>
+                <li>Performance depends on your device</li>
+                <li>Large datasets or filesizes might crash the app</li>
+              </ul>
             </div>
-            <div className="border-t pt-4">
-              <h3 className="text-base font-medium mb-2">Performance</h3>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <p>Large files or many pages may take longer to process, especially on older devices.</p>
-                <p>Processing time increases with file size and number of pages.</p>
-              </div>
-            </div>
-            <div className="border-t pt-4">
-              <h3 className="text-base font-medium mb-2">Simplicity by Design</h3>
-              <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                <p>
-                  This app is intentionally simple. No accounts. No logins. No ads. No tracking. No unnecessary features. Just a fast and straightforward tool that does one thing well and stays out of your way.
-                </p>
-              </div>
-            </div>
-            <div className="border-t pt-4">
-              <h3 className="text-base font-medium mb-2">Terms, Privacy and Responsibility</h3>
-              <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                <p>
-                  By using this tool, you confirm that you have the legal right to process the files you upload and that you comply with all applicable laws. The developer is not responsible for any misuse of the application.
-                </p>
-                <p>
-                  We do not collect, store, transmit, or analyze any files or user data.
-                </p>
-                <p>
-                  This is an open-source application developed and maintained by{" "}
-                  <a
-                    href="https://helvety.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    Helvety
-                  </a>
-                  , a Swiss company committed to transparency and respect for user privacy and data protection. Anyone can verify our privacy and security claims by reviewing the{" "}
-                  <a
-                    href="https://github.com/CasparRubin/helvety-pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    publicly available code
-                  </a>
-                  .
-                </p>
-                <p className="mt-2 font-medium">
-                  You must read and agree to the Terms of Service and Privacy Policy before using this application.
-                </p>
-                <p className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                  <Link
-                    href="/terms"
-                    className="text-primary hover:underline"
-                  >
-                    Terms of Service
-                  </Link>
-                  <span>•</span>
-                  <Link
-                    href="/privacy"
-                    className="text-primary hover:underline"
-                  >
-                    Privacy Policy
-                  </Link>
-                  <span>•</span>
-                  <a
-                    href="https://helvety.com/legal-notice"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline transition-colors"
-                  >
-                    Legal Notice
-                  </a>
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-4 pt-4">
+            <div className="flex flex-col gap-3 pt-3 border-t">
               <div className="flex items-center gap-2">
                 <Checkbox
                   id="acknowledge-terms"
