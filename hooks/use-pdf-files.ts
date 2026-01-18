@@ -5,10 +5,12 @@ import * as React from "react"
 import { PDFDocument } from "pdf-lib"
 
 // Internal utilities
-import { getPdfColor } from "@/lib/pdf-colors"
-import { formatPdfError } from "@/lib/pdf-errors"
-import { loadFileWithPreview, convertImageToPdf, loadPdfFromFile } from "@/lib/pdf-utils"
-import { validateFileType, validateFileSize, isPdfFile } from "@/lib/file-validation"
+import { convertImageToPdf } from "@/lib/pdf-conversion"
+import { loadPdfFromFile } from "@/lib/pdf-loading"
+import { validateFiles } from "@/lib/validation-utils"
+import { formatValidationErrors } from "@/lib/error-formatting"
+import { processFile } from "@/lib/file-processing"
+import { safeRevokeObjectURL } from "@/lib/blob-url-utils"
 import { logger } from "@/lib/logger"
 import { FILE_LIMITS } from "@/lib/constants"
 
@@ -16,25 +18,18 @@ import { FILE_LIMITS } from "@/lib/constants"
 import type { PdfFile, UnifiedPage } from "@/lib/types"
 
 interface UsePdfFilesReturn {
-  pdfFiles: PdfFile[]
-  setPdfFiles: React.Dispatch<React.SetStateAction<PdfFile[]>>
-  unifiedPages: UnifiedPage[]
-  pageOrder: number[]
-  setPageOrder: React.Dispatch<React.SetStateAction<number[]>>
-  pdfCacheRef: React.MutableRefObject<Map<string, PDFDocument>>
-  validateAndAddFiles: (files: FileList | File[], onError: (error: string | null) => void) => Promise<void>
-  removeFile: (fileId: string) => void
-  clearAll: () => void
-  getCachedPdf: (fileId: string, file: File, fileType: 'pdf' | 'image') => Promise<PDFDocument>
+  readonly pdfFiles: ReadonlyArray<PdfFile>
+  readonly setPdfFiles: React.Dispatch<React.SetStateAction<PdfFile[]>>
+  readonly unifiedPages: ReadonlyArray<UnifiedPage>
+  readonly pageOrder: ReadonlyArray<number>
+  readonly setPageOrder: React.Dispatch<React.SetStateAction<number[]>>
+  readonly pdfCacheRef: React.MutableRefObject<Map<string, PDFDocument>>
+  readonly validateAndAddFiles: (files: FileList | ReadonlyArray<File>, onError: (error: string | null) => void) => Promise<void>
+  readonly removeFile: (fileId: string) => void
+  readonly clearAll: () => void
+  readonly getCachedPdf: (fileId: string, file: File, fileType: 'pdf' | 'image') => Promise<PDFDocument>
 }
 
-/**
- * Generates a unique ID using timestamp and random string.
- * @returns A unique identifier string
- */
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
-}
 
 /**
  * Creates a unified pages array from files (PDFs and images), assigning sequential page numbers
@@ -128,106 +123,45 @@ export function usePdfFiles(): UsePdfFilesReturn {
    * @param files - FileList or array of File objects to validate and add
    * @param onError - Callback function to handle errors
    */
-  const validateAndAddFiles = React.useCallback(async (files: FileList | File[], onError: (error: string | null) => void): Promise<void> => {
+  const validateAndAddFiles = React.useCallback(async (files: FileList | ReadonlyArray<File>, onError: (error: string | null) => void): Promise<void> => {
     const fileArray = Array.from(files)
     const pdfFilesToAdd: PdfFile[] = []
-    const validationErrors: string[] = []
 
     // Rate limiting: enforce minimum delay between uploads
     const now = Date.now()
     const timeSinceLastUpload = now - lastUploadTimeRef.current
     if (timeSinceLastUpload < FILE_LIMITS.UPLOAD_RATE_LIMIT) {
       const delay = FILE_LIMITS.UPLOAD_RATE_LIMIT - timeSinceLastUpload
-      await new Promise(resolve => setTimeout(resolve, delay))
+      await new Promise<void>((resolve: () => void) => setTimeout(resolve, delay))
     }
     lastUploadTimeRef.current = Date.now()
 
-    // Check total file count limit
-    const currentFileCount = pdfFiles.length
-    const newFileCount = fileArray.length
-    if (currentFileCount + newFileCount > FILE_LIMITS.MAX_FILES) {
-      validationErrors.push(`Cannot add ${newFileCount} file(s). Maximum ${FILE_LIMITS.MAX_FILES} files allowed. You currently have ${currentFileCount} file(s).`)
-      onError(validationErrors[0])
+    // Validate files using extracted utility
+    const validationResult = validateFiles(fileArray, pdfFiles)
+    if (!validationResult.valid) {
+      const errorMessage = formatValidationErrors(validationResult.errors)
+      onError(errorMessage)
       return
     }
 
-    for (const file of fileArray) {
-      // Validate file type
-      const typeValidation = validateFileType(file)
-      if (!typeValidation.valid) {
-        validationErrors.push(typeValidation.error || `'${file.name}' is not a supported file type.`)
-        continue
-      }
-
-      // Validate file size
-      const sizeValidation = validateFileSize(file)
-      if (!sizeValidation.valid) {
-        validationErrors.push(sizeValidation.error || `'${file.name}' has an invalid file size.`)
-        continue
-      }
-
-      // Determine file type after validation
-      const isPdf = isPdfFile(file)
-
-      if (pdfFiles.some((pf) => pf.file.name === file.name && pf.file.size === file.size)) {
-        validationErrors.push(`'${file.name}' is already added.`)
-        continue
-      }
-
-      let url: string | null = null
-      try {
-        // Use shared utility to load file and create preview URL
-        const { pdf, url: previewUrl, fileType } = await loadFileWithPreview(file, isPdf)
-        url = previewUrl
-
-        const count = pdf.getPageCount()
-
-        if (count === 0) {
-          validationErrors.push(`'${file.name}' has no pages.`)
-          if (url) {
-            URL.revokeObjectURL(url)
-            url = null
-          }
-          continue
-        }
-
-        // Generate fileId first, then cache the PDF
-        const fileId = generateId()
-        
-        // Cache the converted PDF (for images, this is the converted PDF)
-        // Make sure to cache BEFORE adding to state to avoid race conditions
-        pdfCacheRef.current.set(fileId, pdf)
-        
-        logger.log(`Cached PDF for ${fileType} file:`, file.name, 'with ID:', fileId)
-
-        // Assign color based on current file count
-        const color = getPdfColor(pdfFiles.length + pdfFilesToAdd.length)
-
-        pdfFilesToAdd.push({
-          id: fileId,
-          file,
-          url: url, // url is guaranteed to be set at this point
-          pageCount: count,
-          color,
-          type: fileType,
-        })
-        // Clear url reference since it's now owned by the PdfFile object
-        url = null
-      } catch (err) {
-        // Ensure blob URL is cleaned up on error
-        if (url) {
-          URL.revokeObjectURL(url)
-          url = null
-        }
-        const userMessage = formatPdfError(err, `Can't load '${file.name}':`)
-        validationErrors.push(userMessage)
+    const validationErrors: string[] = []
+    
+    // Process each file
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i]
+      const fileIndex = pdfFiles.length + pdfFilesToAdd.length
+      
+      const result = await processFile(file, fileIndex, pdfCacheRef.current)
+      
+      if ('error' in result) {
+        validationErrors.push(result.error)
+      } else {
+        pdfFilesToAdd.push(result.pdfFile)
       }
     }
 
     if (validationErrors.length > 0) {
-      const errorMessage = validationErrors.length === 1 
-        ? validationErrors[0]
-        : `Some files couldn't be added:\n${validationErrors.map((err, idx) => `${idx + 1}. ${err}`).join('\n')}`
+      const errorMessage = formatValidationErrors(validationErrors)
       onError(errorMessage)
     }
 
@@ -253,22 +187,22 @@ export function usePdfFiles(): UsePdfFilesReturn {
   }, [pdfFiles])
 
   const removeFile = React.useCallback((fileId: string): void => {
-    setPdfFiles((prev) => {
-      const file = prev.find(f => f.id === fileId)
+    setPdfFiles((prev: PdfFile[]) => {
+      const file: PdfFile | undefined = prev.find((f: PdfFile) => f.id === fileId)
       if (file) {
-        URL.revokeObjectURL(file.url)
+        safeRevokeObjectURL(file.url)
       }
       // Clear PDF from cache
       pdfCacheRef.current.delete(fileId)
-      return prev.filter((f) => f.id !== fileId)
+      return prev.filter((f: PdfFile) => f.id !== fileId)
     })
   }, [])
 
   const clearAll = React.useCallback((): void => {
-    setPdfFiles((prev) => {
+    setPdfFiles((prev: PdfFile[]) => {
       // Clean up all blob URLs
-      prev.forEach(file => {
-        URL.revokeObjectURL(file.url)
+      prev.forEach((file: PdfFile) => {
+        safeRevokeObjectURL(file.url)
       })
       // Clear PDF cache
       pdfCacheRef.current.clear()

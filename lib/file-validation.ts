@@ -54,9 +54,12 @@ async function verifyMagicNumber(file: File, expectedMagicNumber: Uint8Array): P
  * Uses synchronous validation for performance.
  * 
  * @param file - The file to check
- * @returns True if the file is a PDF
+ * @returns True if the file is a PDF and is a valid File object
  */
-export function isPdfFile(file: File): boolean {
+export function isPdfFile(file: File | null | undefined): file is File {
+  if (!file || !(file instanceof File)) {
+    return false
+  }
   return isValidPdfFileSync(file)
 }
 
@@ -65,23 +68,26 @@ export function isPdfFile(file: File): boolean {
  * Uses synchronous validation for performance.
  * 
  * @param file - The file to check
- * @returns True if the file is an image
+ * @returns True if the file is an image and is a valid File object
  */
-export function isImageFile(file: File): boolean {
+export function isImageFile(file: File | null | undefined): file is File {
+  if (!file || !(file instanceof File)) {
+    return false
+  }
   return isValidImageFileSync(file)
 }
 
 /**
  * Valid MIME types for PDF files
  */
-const VALID_PDF_MIME_TYPES = new Set([
+const VALID_PDF_MIME_TYPES = new Set<string>([
   "application/pdf",
 ])
 
 /**
  * Valid MIME types for image files
  */
-const VALID_IMAGE_MIME_TYPES = new Set([
+const VALID_IMAGE_MIME_TYPES = new Set<string>([
   "image/jpeg",
   "image/jpg",
   "image/png",
@@ -95,14 +101,14 @@ const VALID_IMAGE_MIME_TYPES = new Set([
 /**
  * Valid file extensions for PDF files
  */
-const VALID_PDF_EXTENSIONS = new Set([
+const VALID_PDF_EXTENSIONS = new Set<string>([
   ".pdf",
 ])
 
 /**
  * Valid file extensions for image files
  */
-const VALID_IMAGE_EXTENSIONS = new Set([
+const VALID_IMAGE_EXTENSIONS = new Set<string>([
   ".jpg",
   ".jpeg",
   ".png",
@@ -121,7 +127,10 @@ const VALID_IMAGE_EXTENSIONS = new Set([
  * @returns The file extension (e.g., ".pdf", ".jpg") or empty string
  */
 function getFileExtension(filename: string): string {
-  const lastDot = filename.lastIndexOf(".")
+  if (!filename || typeof filename !== 'string') {
+    return ""
+  }
+  const lastDot: number = filename.lastIndexOf(".")
   if (lastDot === -1 || lastDot === filename.length - 1) {
     return ""
   }
@@ -275,7 +284,7 @@ export function isValidImageFileSync(file: File): boolean {
  * @param file - The file to validate
  * @returns Object with validation result and error message if invalid
  */
-export function validateFileType(file: File): { valid: boolean; error?: string } {
+export function validateFileType(file: File): Readonly<{ valid: boolean; error?: string }> {
   if (isValidPdfFileSync(file)) {
     return { valid: true }
   }
@@ -315,7 +324,7 @@ export function validateFileType(file: File): { valid: boolean; error?: string }
  * @param file - The file to validate
  * @returns Object with validation result and error message if invalid
  */
-export function validateFileSize(file: File): { valid: boolean; error?: string } {
+export function validateFileSize(file: File): Readonly<{ valid: boolean; error?: string }> {
   if (file.size === 0) {
     return {
       valid: false,

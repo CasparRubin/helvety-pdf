@@ -76,12 +76,12 @@ export function HelvetyPdf(): React.JSX.Element {
   }, [pdfProcessing.isProcessing])
 
   // Memoize computed statistics to prevent unnecessary recalculations
-  const deletedCount = React.useMemo(() => {
-    return pageOrder.filter(p => deletedPages.has(p)).length
+  const deletedCount: number = React.useMemo(() => {
+    return pageOrder.filter((p: number) => deletedPages.has(p)).length
   }, [pageOrder, deletedPages])
 
-  const rotatedCount = React.useMemo(() => {
-    return Object.keys(pageRotations).filter(k => pageRotations[Number(k)] !== 0).length
+  const rotatedCount: number = React.useMemo(() => {
+    return Object.keys(pageRotations).filter((k: string) => pageRotations[Number(k)] !== 0).length
   }, [pageRotations])
 
   // Drag and drop
@@ -92,7 +92,7 @@ export function HelvetyPdf(): React.JSX.Element {
 
   // File input handler
   const handleFileInput = React.useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
-    const files = e.target.files
+    const files: FileList | null = e.target.files
     if (files && files.length > 0) {
       validateAndAddFilesBase(files, setError)
     }
@@ -135,7 +135,7 @@ export function HelvetyPdf(): React.JSX.Element {
         const totalPages = pageOrder.length
         const deletedCount = newSet.size
         if (totalPages - deletedCount <= 1) {
-          setError("Cannot delete all pages. At least one page must remain.")
+          setError("Cannot delete all pages. At least one page must remain in the document.")
           return prev
         }
         newSet.add(unifiedPageNumber)
@@ -199,7 +199,12 @@ export function HelvetyPdf(): React.JSX.Element {
           )}
           aria-label="File drop zone and page canvas"
           aria-live="polite"
+          aria-describedby="drop-zone-description"
         >
+          <span id="drop-zone-description" className="sr-only">
+            Drag and drop PDF files or images here, or use the upload button in the toolbar to add files.
+            {pdfFiles.length > 0 && ` Currently displaying ${pageOrder.length} page${pageOrder.length !== 1 ? 's' : ''}.`}
+          </span>
           {/* Empty State - Drag and Drop Zone */}
           {pdfFiles.length === 0 && (
             <div className={cn(

@@ -3,19 +3,6 @@
 // React
 import * as React from "react"
 
-// External libraries
-import { 
-  ChevronUpIcon, 
-  ChevronDownIcon, 
-  ChevronLeftIcon, 
-  ChevronRightIcon,
-  Trash2,
-  RotateCw,
-  RotateCcw,
-  RefreshCw,
-  Download
-} from "lucide-react"
-
 // Internal components
 import { PdfPageThumbnail } from "@/components/pdf-page-thumbnail"
 import { PdfActionButtons } from "@/components/pdf-action-buttons"
@@ -25,24 +12,27 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { addOklchAlpha } from "@/lib/pdf-colors"
 import { createPageMap, createFileMap, createFileUrlMap } from "@/lib/pdf-lookup-utils"
-import { ROTATION_ANGLES } from "@/lib/constants"
+import { createPageActions } from "@/lib/page-actions"
+
+// Custom hooks
+import { usePageDragDrop } from "@/hooks/use-page-drag-drop"
 
 // Types
 import type { PdfFile, UnifiedPage } from "@/lib/types"
 
 interface PdfPageGridProps {
-  pdfFiles: PdfFile[]
-  unifiedPages: UnifiedPage[]
-  pageOrder: number[]
-  deletedPages: Set<number>
-  pageRotations: Record<number, number>
-  onReorder: (newOrder: number[]) => void
-  onToggleDelete: (unifiedPageNumber: number) => void
-  onRotate: (unifiedPageNumber: number, angle: number) => void
-  onResetRotation: (unifiedPageNumber: number) => void
-  onExtract: (unifiedPageNumber: number) => void
-  isProcessing: boolean
-  columns?: number
+  readonly pdfFiles: ReadonlyArray<PdfFile>
+  readonly unifiedPages: ReadonlyArray<UnifiedPage>
+  readonly pageOrder: ReadonlyArray<number>
+  readonly deletedPages: ReadonlySet<number>
+  readonly pageRotations: Readonly<Record<number, number>>
+  readonly onReorder: (newOrder: number[]) => void
+  readonly onToggleDelete: (unifiedPageNumber: number) => void
+  readonly onRotate: (unifiedPageNumber: number, angle: number) => void
+  readonly onResetRotation: (unifiedPageNumber: number) => void
+  readonly onExtract: (unifiedPageNumber: number) => void
+  readonly isProcessing: boolean
+  readonly columns?: number
 }
 
 function PdfPageGridComponent({
@@ -59,46 +49,12 @@ function PdfPageGridComponent({
   isProcessing,
   columns,
 }: PdfPageGridProps): React.JSX.Element | null {
-  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null)
-  const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null)
-
-  const handleDragStart = React.useCallback((index: number): void => {
-    setDraggedIndex(index)
-  }, [])
-
-  const handleDragOver = React.useCallback((e: React.DragEvent, index: number): void => {
-    e.preventDefault()
-    if (draggedIndex !== null && draggedIndex !== index) {
-      setDragOverIndex(index)
-    }
-  }, [draggedIndex])
-
-  const handleDragLeave = React.useCallback((): void => {
-    setDragOverIndex(null)
-  }, [])
-
-  const handleDrop = React.useCallback((e: React.DragEvent, dropIndex: number): void => {
-    e.preventDefault()
-    if (draggedIndex === null || draggedIndex === dropIndex) {
-      setDraggedIndex(null)
-      setDragOverIndex(null)
-      return
-    }
-
-    const newOrder = [...pageOrder]
-    const draggedPage = newOrder[draggedIndex]
-    newOrder.splice(draggedIndex, 1)
-    newOrder.splice(dropIndex, 0, draggedPage)
-    onReorder(newOrder)
-
-    setDraggedIndex(null)
-    setDragOverIndex(null)
-  }, [draggedIndex, pageOrder, onReorder])
-
-  const handleDragEnd = React.useCallback((): void => {
-    setDraggedIndex(null)
-    setDragOverIndex(null)
-  }, [])
+  // Use drag-and-drop hook for cleaner code organization
+  const dragDrop = usePageDragDrop({
+    pageOrder,
+    onReorder,
+    announcementId: 'page-reorder-announcement',
+  })
 
   const handleMoveUp = React.useCallback((index: number): void => {
     if (index === 0) return
@@ -118,13 +74,6 @@ function PdfPageGridComponent({
     onReorder(newOrder)
   }, [pageOrder, onReorder])
 
-  const handleMoveLeft = React.useCallback((index: number): void => {
-    handleMoveUp(index)
-  }, [handleMoveUp])
-
-  const handleMoveRight = React.useCallback((index: number): void => {
-    handleMoveDown(index)
-  }, [handleMoveDown])
 
   // Create memoized maps for O(1) lookups instead of O(n) Array.find()
   const pageInfoMap = React.useMemo(() => createPageMap(unifiedPages), [unifiedPages])
@@ -146,47 +95,61 @@ function PdfPageGridComponent({
     return map
   }, [pageOrder, deletedPages])
 
-  // Get page info for display
-  const getPageInfo = (unifiedPageNumber: number) => {
+  // Memoize lookup functions to avoid recreating them on every render
+  // These are stable as long as the maps don't change (which is controlled by dependencies)
+  const getPageInfo = React.useCallback((unifiedPageNumber: number) => {
     return pageInfoMap.get(unifiedPageNumber)
-  }
+  }, [pageInfoMap])
 
-  const getFileUrl = (fileId: string) => {
+  const getFileUrl = React.useCallback((fileId: string) => {
     return fileUrlMap.get(fileId)
-  }
+  }, [fileUrlMap])
 
-  const getFileInfo = (fileId: string) => {
+  const getFileInfo = React.useCallback((fileId: string) => {
     return fileInfoMap.get(fileId)
-  }
+  }, [fileInfoMap])
 
-  const getFinalPageNumber = (unifiedPageNumber: number): number | null => {
+  const getFinalPageNumber = React.useCallback((unifiedPageNumber: number): number | null => {
     return finalPageNumberMap.get(unifiedPageNumber) ?? null
-  }
+  }, [finalPageNumberMap])
+
+  // Memoize grid style and className to avoid recalculating
+  const gridStyle = React.useMemo(() => {
+    return columns
+      ? {
+          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+          marginTop: 0,
+          paddingTop: 0,
+        }
+      : { marginTop: 0, paddingTop: 0 }
+  }, [columns])
+
+  const gridClassName = React.useMemo(() => {
+    return columns
+      ? "grid gap-6"
+      : "grid grid-cols-1 grid-cols-2-at-1230 grid-cols-3-at-1655 gap-6"
+  }, [columns])
 
   if (pageOrder.length === 0) {
     return null
   }
 
-  // Use dynamic columns if provided, otherwise fall back to CSS classes
-  const gridStyle = columns
-    ? {
-        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-        marginTop: 0,
-        paddingTop: 0,
-      }
-    : { marginTop: 0, paddingTop: 0 }
-
-  const gridClassName = columns
-    ? "grid gap-6"
-    : "grid grid-cols-1 grid-cols-2-at-1230 grid-cols-3-at-1655 gap-6"
-
   return (
-    <div 
-      className={gridClassName} 
-      style={gridStyle}
-      role="list"
-      aria-label="PDF pages grid"
-    >
+    <>
+      {/* Live region for drag-and-drop and reordering feedback */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        id="page-reorder-announcement"
+      />
+      <div 
+        className={gridClassName} 
+        style={gridStyle}
+        role="list"
+        aria-label="PDF pages grid"
+      >
       {pageOrder.map((unifiedPageNumber, index) => {
         const page = getPageInfo(unifiedPageNumber)
         if (!page) return null
@@ -201,86 +164,24 @@ function PdfPageGridComponent({
         const hasRotation = rotation !== 0
         const finalPageNumber = getFinalPageNumber(unifiedPageNumber)
 
-        const actions = [
-          // Reorder buttons
-          {
-            icon: <ChevronUpIcon className="h-4 w-4" />,
-            onClick: () => handleMoveUp(index),
-            ariaLabel: `Move page ${unifiedPageNumber} up`,
-            title: index === 0 ? "Already at top" : "Move up",
-            disabled: index === 0 || isProcessing,
-            className: "sm:hidden",
-          },
-          {
-            icon: <ChevronDownIcon className="h-4 w-4" />,
-            onClick: () => handleMoveDown(index),
-            ariaLabel: `Move page ${unifiedPageNumber} down`,
-            title: index === pageOrder.length - 1 ? "Already at bottom" : "Move down",
-            disabled: index === pageOrder.length - 1 || isProcessing,
-            className: "sm:hidden",
-          },
-          {
-            icon: <ChevronLeftIcon className="h-4 w-4" />,
-            onClick: () => handleMoveLeft(index),
-            ariaLabel: `Move page ${unifiedPageNumber} left`,
-            title: index === 0 ? "Already at start" : "Move left",
-            disabled: index === 0 || isProcessing,
-            className: "hidden sm:flex",
-          },
-          {
-            icon: <ChevronRightIcon className="h-4 w-4" />,
-            onClick: () => handleMoveRight(index),
-            ariaLabel: `Move page ${unifiedPageNumber} right`,
-            title: index === pageOrder.length - 1 ? "Already at end" : "Move right",
-            disabled: index === pageOrder.length - 1 || isProcessing,
-            className: "hidden sm:flex",
-          },
-          // Delete button
-          {
-            icon: isDeleted ? <RefreshCw className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />,
-            onClick: () => onToggleDelete(unifiedPageNumber),
-            ariaLabel: isDeleted ? `Restore page ${unifiedPageNumber}` : `Delete page ${unifiedPageNumber}`,
-            title: isDeleted ? "Restore" : "Delete",
-            disabled: isProcessing,
-            variant: (isDeleted ? "destructive" : "secondary") as "destructive" | "secondary",
-          },
-          // Rotate buttons
-          {
-            icon: <RotateCw className="h-4 w-4" />,
-            onClick: () => onRotate(unifiedPageNumber, ROTATION_ANGLES.INCREMENT),
-            ariaLabel: `Rotate page ${unifiedPageNumber} 90° clockwise`,
-            title: "Rotate 90° clockwise",
-            disabled: isProcessing,
-          },
-          {
-            icon: <RotateCcw className="h-4 w-4" />,
-            onClick: () => onRotate(unifiedPageNumber, -ROTATION_ANGLES.INCREMENT),
-            ariaLabel: `Rotate page ${unifiedPageNumber} 90° counter-clockwise`,
-            title: "Rotate 90° counter-clockwise",
-            disabled: isProcessing,
-          },
-          // Reset rotation button (only show if rotated)
-          ...(hasRotation
-            ? [
-                {
-                  icon: <RefreshCw className="h-4 w-4" />,
-                  onClick: () => onResetRotation(unifiedPageNumber),
-                  ariaLabel: `Reset rotation for page ${unifiedPageNumber}`,
-                  title: "Reset rotation",
-                  disabled: isProcessing,
-                  variant: "destructive" as const,
-                },
-              ]
-            : []),
-          // Extract button
-          {
-            icon: <Download className="h-4 w-4" />,
-            onClick: () => onExtract(unifiedPageNumber),
-            ariaLabel: `Extract page ${unifiedPageNumber} as single PDF`,
-            title: "Extract as single PDF",
-            disabled: isProcessing,
-          },
-        ]
+        // Create actions using utility function
+        const actions = createPageActions({
+          index,
+          unifiedPageNumber,
+          totalPages: pageOrder.length,
+          isDeleted,
+          hasRotation,
+          rotation,
+          isProcessing,
+          onMoveUp: handleMoveUp,
+          onMoveDown: handleMoveDown,
+          onMoveLeft: handleMoveUp,
+          onMoveRight: handleMoveDown,
+          onToggleDelete,
+          onRotate,
+          onResetRotation,
+          onExtract,
+        })
 
         const containerStyle = fileInfo?.color 
           ? { 
@@ -289,7 +190,7 @@ function PdfPageGridComponent({
           : undefined
 
         const pageDescriptionId = `page-${unifiedPageNumber}-description`
-        const pageLabel = `Page ${unifiedPageNumber}${fileInfo.file.name ? ` from ${fileInfo.file.name}` : ''}${isDeleted ? ' (deleted)' : ''}${hasRotation ? ` (rotated ${rotation}°)` : ''}`
+        const pageLabel = `Page ${unifiedPageNumber}${fileInfo.file.name ? ` from ${fileInfo.file.name}` : ''}${isDeleted ? ' (deleted)' : ''}${hasRotation ? ` (rotated ${rotation}°)` : ''}. Use arrow keys to move page up, down, left, or right. Press Tab to access action buttons.`
 
         return (
           <article
@@ -299,26 +200,64 @@ function PdfPageGridComponent({
             tabIndex={0}
             aria-label={pageLabel}
             aria-describedby={pageDescriptionId}
-            onDragStart={() => handleDragStart(index)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, index)}
-            onDragEnd={handleDragEnd}
-            onKeyDown={(e) => {
+            onDragStart={() => dragDrop.handleDragStart(index)}
+            onDragOver={(e) => dragDrop.handleDragOver(e, index)}
+            onDragLeave={dragDrop.handleDragLeave}
+            onDrop={(e) => dragDrop.handleDrop(e, index)}
+            onDragEnd={dragDrop.handleDragEnd}
+            onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
               // Keyboard navigation for drag and drop
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
                 // Focus management for keyboard users
                 if (e.key === 'Enter') {
-                  // Could trigger a context menu or action panel
+                  // Trigger action panel or menu for keyboard users
+                  // The action buttons are accessible via tab navigation
+                }
+              }
+              // Arrow key navigation for reordering
+              if (e.key === 'ArrowUp' && index > 0) {
+                e.preventDefault()
+                handleMoveUp(index)
+                // Announce reordering to screen readers
+                const announcement = document.getElementById('page-reorder-announcement')
+                if (announcement) {
+                  announcement.textContent = `Page ${unifiedPageNumber} moved up to position ${index}`
+                }
+              }
+              if (e.key === 'ArrowDown' && index < pageOrder.length - 1) {
+                e.preventDefault()
+                handleMoveDown(index)
+                // Announce reordering to screen readers
+                const announcement = document.getElementById('page-reorder-announcement')
+                if (announcement) {
+                  announcement.textContent = `Page ${unifiedPageNumber} moved down to position ${index + 2}`
+                }
+              }
+              if (e.key === 'ArrowLeft' && index > 0) {
+                e.preventDefault()
+                handleMoveUp(index)
+                // Announce reordering to screen readers
+                const announcement = document.getElementById('page-reorder-announcement')
+                if (announcement) {
+                  announcement.textContent = `Page ${unifiedPageNumber} moved left to position ${index}`
+                }
+              }
+              if (e.key === 'ArrowRight' && index < pageOrder.length - 1) {
+                e.preventDefault()
+                handleMoveDown(index)
+                // Announce reordering to screen readers
+                const announcement = document.getElementById('page-reorder-announcement')
+                if (announcement) {
+                  announcement.textContent = `Page ${unifiedPageNumber} moved right to position ${index + 2}`
                 }
               }
             }}
             className={cn(
               "relative group border border-border p-4 transition-all flex gap-4",
               "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-              draggedIndex === index && "opacity-50",
-              dragOverIndex === index && "ring-2 ring-primary ring-offset-2",
+              dragDrop.draggedIndex === index && "opacity-50",
+              dragDrop.dragOverIndex === index && "ring-2 ring-primary ring-offset-2",
               isDeleted && "opacity-50"
             )}
             style={containerStyle}
@@ -356,36 +295,47 @@ function PdfPageGridComponent({
           </article>
         )
       })}
-    </div>
+      </div>
+    </>
   )
 }
 
-// Memoize component to prevent unnecessary re-renders
-// Custom comparison function to optimize re-renders
-export const PdfPageGrid = React.memo(PdfPageGridComponent, (prevProps, nextProps) => {
-  // Compare primitive values
+/**
+ * Custom comparison function for React.memo to optimize re-renders.
+ * Only re-renders when props actually change.
+ */
+function arePropsEqual(
+  prevProps: PdfPageGridProps,
+  nextProps: PdfPageGridProps
+): boolean {
+  // Compare primitive values first (fastest check)
   if (
     prevProps.isProcessing !== nextProps.isProcessing ||
-    prevProps.columns !== nextProps.columns ||
-    prevProps.pageOrder.length !== nextProps.pageOrder.length ||
-    prevProps.pdfFiles.length !== nextProps.pdfFiles.length ||
-    prevProps.unifiedPages.length !== nextProps.unifiedPages.length ||
-    prevProps.deletedPages.size !== nextProps.deletedPages.size ||
-    Object.keys(prevProps.pageRotations).length !== Object.keys(nextProps.pageRotations).length
+    prevProps.columns !== nextProps.columns
   ) {
     return false // Props changed, re-render
   }
 
-  // Deep comparison for arrays and objects (shallow check is usually sufficient)
-  // If order changed, we need to re-render
+  // Compare array lengths (fast check)
+  if (
+    prevProps.pageOrder.length !== nextProps.pageOrder.length ||
+    prevProps.pdfFiles.length !== nextProps.pdfFiles.length ||
+    prevProps.unifiedPages.length !== nextProps.unifiedPages.length
+  ) {
+    return false // Array lengths changed, re-render
+  }
+
+  // Compare page order (if order changed, we need to re-render)
   if (prevProps.pageOrder.some((val, idx) => val !== nextProps.pageOrder[idx])) {
     return false
   }
 
-  // Check if deleted pages changed (optimized: check size first, then iterate once)
+  // Check if deleted pages changed (optimized: check size first, then verify all items match)
   if (prevProps.deletedPages.size !== nextProps.deletedPages.size) {
     return false
   }
+  // If sizes match, verify all items match (Set equality check)
+  // Since Sets are equal if they have the same size and all elements from one exist in the other
   for (const pageNum of prevProps.deletedPages) {
     if (!nextProps.deletedPages.has(pageNum)) {
       return false
@@ -404,6 +354,15 @@ export const PdfPageGrid = React.memo(PdfPageGridComponent, (prevProps, nextProp
     }
   }
 
+  // Compare array references (if references are same, arrays haven't changed)
+  if (
+    prevProps.pdfFiles !== nextProps.pdfFiles ||
+    prevProps.unifiedPages !== nextProps.unifiedPages
+  ) {
+    // Arrays changed, need to re-render
+    return false
+  }
+
   // Functions are compared by reference - if they're stable, this is fine
   // If they changed, we want to re-render anyway
   return (
@@ -411,9 +370,10 @@ export const PdfPageGrid = React.memo(PdfPageGridComponent, (prevProps, nextProp
     prevProps.onToggleDelete === nextProps.onToggleDelete &&
     prevProps.onRotate === nextProps.onRotate &&
     prevProps.onResetRotation === nextProps.onResetRotation &&
-    prevProps.onExtract === nextProps.onExtract &&
-    prevProps.pdfFiles === nextProps.pdfFiles &&
-    prevProps.unifiedPages === nextProps.unifiedPages
+    prevProps.onExtract === nextProps.onExtract
   )
-})
+}
+
+// Memoize component to prevent unnecessary re-renders
+export const PdfPageGrid = React.memo(PdfPageGridComponent, arePropsEqual)
 

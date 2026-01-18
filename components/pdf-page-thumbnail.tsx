@@ -361,8 +361,15 @@ function PdfPageThumbnailComponent({
 
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function onDocumentLoadSuccess(_: { numPages: number }) {
+  /**
+   * Callback handler for when the PDF document successfully loads.
+   * The numPages parameter is provided by react-pdf but not used here since
+   * we're rendering a single page thumbnail. The parameter is required by
+   * the library's callback signature.
+   * 
+   * @param _loadInfo - Document load information containing numPages (unused but required by react-pdf)
+   */
+  function onDocumentLoadSuccess(_loadInfo: { numPages: number }): void {
     setLoading(false)
     setError(false)
     setErrorMessage(null)
@@ -393,7 +400,13 @@ function PdfPageThumbnailComponent({
     }
   }, [])
 
-  function onDocumentLoadError(error: Error) {
+  /**
+   * Callback handler for when the PDF document fails to load.
+   * Provides user-friendly error messages based on the error type.
+   * 
+   * @param error - The error that occurred during PDF loading
+   */
+  function onDocumentLoadError(error: Error): void {
     logger.error("PDF load error:", error)
     setLoading(false)
     setError(true)
@@ -454,6 +467,9 @@ function PdfPageThumbnailComponent({
             fileType === 'image' ? (
               // Render images using native img tag
               // For 90/270 degree rotations, we need to swap dimensions to prevent clipping
+              // Note: Using native img element is necessary here because we're rendering
+              // user-uploaded images from blob URLs, not static Next.js Image assets.
+              // The @next/next/no-img-element rule is disabled for this specific use case.
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={fileUrl}

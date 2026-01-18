@@ -1,3 +1,5 @@
+import { FILENAME_LIMITS } from "./constants"
+
 /**
  * Sanitizes a filename to prevent path traversal and other security issues.
  * Removes path separators, null bytes, and other dangerous characters.
@@ -14,16 +16,15 @@ function sanitizeFilename(filename: string): string {
     .trim()
   
   // Limit filename length (Windows has 255 char limit, be conservative)
-  const maxLength = 200
-  if (sanitized.length > maxLength) {
+  if (sanitized.length > FILENAME_LIMITS.MAX_LENGTH) {
     const ext = sanitized.substring(sanitized.lastIndexOf('.'))
     const name = sanitized.substring(0, sanitized.lastIndexOf('.'))
-    sanitized = name.substring(0, maxLength - ext.length) + ext
+    sanitized = name.substring(0, FILENAME_LIMITS.MAX_LENGTH - ext.length) + ext
   }
   
   // Ensure filename is not empty
   if (!sanitized || sanitized === '.' || sanitized === '..') {
-    sanitized = 'download'
+    sanitized = FILENAME_LIMITS.DEFAULT_NAME
   }
   
   return sanitized

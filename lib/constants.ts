@@ -135,6 +135,14 @@ export const FILE_LIMITS = {
 } as const
 
 /**
+ * Cache management limits
+ */
+export const CACHE_LIMITS = {
+  /** Maximum number of PDF documents to cache in memory */
+  MAX_CACHED_PDFS: 50,
+} as const
+
+/**
  * Operation timeouts (in milliseconds)
  */
 export const TIMEOUTS = {
@@ -181,4 +189,14 @@ export const CRITICAL_ERROR_PATTERNS = [
   "Can't extract",
   "Download failed",
 ] as const
+
+/**
+ * Filename constraints for file downloads
+ */
+export const FILENAME_LIMITS = {
+  /** Maximum filename length (Windows has 255 char limit, be conservative) */
+  MAX_LENGTH: 200,
+  /** Default filename when sanitization results in empty or invalid name */
+  DEFAULT_NAME: "download",
+} as const
 

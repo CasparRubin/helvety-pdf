@@ -32,17 +32,17 @@ import { BREAKPOINTS, COLUMNS } from "@/lib/constants"
 import type { PdfFile } from "@/lib/types"
 
 interface PdfToolkitProps {
-  pdfFiles: PdfFile[]
-  totalPages: number
-  deletedCount: number
-  rotatedCount: number
-  onDownload: () => void
-  onClearAll: () => void
-  onRemoveFile: (fileId: string) => void
-  onAddFiles: () => void
-  isProcessing: boolean
-  columns?: number
-  onColumnsChange?: (columns: number) => void
+  readonly pdfFiles: ReadonlyArray<PdfFile>
+  readonly totalPages: number
+  readonly deletedCount: number
+  readonly rotatedCount: number
+  readonly onDownload: () => void
+  readonly onClearAll: () => void
+  readonly onRemoveFile: (fileId: string) => void
+  readonly onAddFiles: () => void
+  readonly isProcessing: boolean
+  readonly columns?: number
+  readonly onColumnsChange?: (columns: number) => void
 }
 
 function PdfToolkitComponent({
@@ -57,7 +57,7 @@ function PdfToolkitComponent({
   isProcessing,
   columns,
   onColumnsChange,
-}: PdfToolkitProps) {
+}: PdfToolkitProps): React.JSX.Element {
   const [showColumnSlider, setShowColumnSlider] = React.useState(false)
 
   // Detect if screen width shows more than 1 column (>= MULTI_COLUMN)
@@ -98,6 +98,7 @@ function PdfToolkitComponent({
                 disabled={isProcessing || pdfFiles.length === 0}
                 className="w-full"
                 size="lg"
+                aria-label={isProcessing ? "Processing PDF, please wait" : `Download merged PDF with ${totalPages} page${totalPages !== 1 ? 's' : ''}`}
               >
                 {isProcessing ? (
                   <>
@@ -266,10 +267,15 @@ function PdfToolkitComponent({
   )
 }
 
-// Memoize component to prevent unnecessary re-renders
-// Custom comparison function to optimize re-renders
-export const PdfToolkit = React.memo(PdfToolkitComponent, (prevProps, nextProps) => {
-  // Compare primitive values
+/**
+ * Custom comparison function for React.memo to optimize re-renders.
+ * Only re-renders when props actually change.
+ */
+function arePropsEqual(
+  prevProps: PdfToolkitProps,
+  nextProps: PdfToolkitProps
+): boolean {
+  // Compare primitive values first (fastest check)
   if (
     prevProps.isProcessing !== nextProps.isProcessing ||
     prevProps.columns !== nextProps.columns ||
@@ -280,12 +286,25 @@ export const PdfToolkit = React.memo(PdfToolkitComponent, (prevProps, nextProps)
     return false // Props changed, re-render
   }
 
-  // Compare array length and reference (if reference is same, array hasn't changed)
-  if (
-    prevProps.pdfFiles.length !== nextProps.pdfFiles.length ||
-    prevProps.pdfFiles !== nextProps.pdfFiles
-  ) {
-    return false // Array changed, re-render
+  // Compare array length first (fast check)
+  if (prevProps.pdfFiles.length !== nextProps.pdfFiles.length) {
+    return false // Array length changed, re-render
+  }
+
+  // Compare array reference (if reference is same, array hasn't changed)
+  if (prevProps.pdfFiles !== nextProps.pdfFiles) {
+    // Deep comparison only if references differ
+    // Check if any file changed by comparing IDs (more efficient than deep object comparison)
+    const prevIds = new Set(prevProps.pdfFiles.map(f => f.id))
+    const nextIds = new Set(nextProps.pdfFiles.map(f => f.id))
+    if (prevIds.size !== nextIds.size) {
+      return false
+    }
+    for (const id of prevIds) {
+      if (!nextIds.has(id)) {
+        return false
+      }
+    }
   }
 
   // Compare function references (if they're stable, this is fine)
@@ -297,5 +316,8 @@ export const PdfToolkit = React.memo(PdfToolkitComponent, (prevProps, nextProps)
     prevProps.onAddFiles === nextProps.onAddFiles &&
     prevProps.onColumnsChange === nextProps.onColumnsChange
   )
-})
+}
+
+// Memoize component to prevent unnecessary re-renders
+export const PdfToolkit = React.memo(PdfToolkitComponent, arePropsEqual)
 

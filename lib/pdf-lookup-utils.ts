@@ -12,7 +12,7 @@ import type { PdfFile, UnifiedPage } from "./types"
  * @param unifiedPages - Array of unified pages to convert to a map
  * @returns Map from unified page number to UnifiedPage object
  */
-export function createPageMap(unifiedPages: UnifiedPage[]): Map<number, UnifiedPage> {
+export function createPageMap(unifiedPages: ReadonlyArray<UnifiedPage>): Map<number, UnifiedPage> {
   const map = new Map<number, UnifiedPage>()
   unifiedPages.forEach(page => {
     map.set(page.unifiedPageNumber, page)
@@ -26,7 +26,7 @@ export function createPageMap(unifiedPages: UnifiedPage[]): Map<number, UnifiedP
  * @param pdfFiles - Array of PDF files to convert to a map
  * @returns Map from file ID to PdfFile object
  */
-export function createFileMap(pdfFiles: PdfFile[]): Map<string, PdfFile> {
+export function createFileMap(pdfFiles: ReadonlyArray<PdfFile>): Map<string, PdfFile> {
   const map = new Map<string, PdfFile>()
   pdfFiles.forEach(file => {
     map.set(file.id, file)
@@ -40,7 +40,7 @@ export function createFileMap(pdfFiles: PdfFile[]): Map<string, PdfFile> {
  * @param pdfFiles - Array of PDF files to extract URLs from
  * @returns Map from file ID to blob URL string
  */
-export function createFileUrlMap(pdfFiles: PdfFile[]): Map<string, string> {
+export function createFileUrlMap(pdfFiles: ReadonlyArray<PdfFile>): Map<string, string> {
   const map = new Map<string, string>()
   pdfFiles.forEach(file => {
     map.set(file.id, file.url)

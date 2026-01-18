@@ -6,11 +6,14 @@ import { PDFDocument } from "pdf-lib"
 
 // Internal utilities
 import { formatTimestamp } from "@/lib/utils"
-import { formatPdfError } from "@/lib/pdf-errors"
+import { createPdfErrorInfo, PdfErrorType } from "@/lib/pdf-errors"
+import { handleError } from "@/lib/error-handler"
 import { downloadBlob } from "@/lib/file-download"
 import { applyPageRotation } from "@/lib/pdf-rotation"
-import { extractPageFromPdf } from "@/lib/pdf-utils"
+import { extractPageFromPdf } from "@/lib/pdf-extraction"
 import { createPageMap, createFileMap } from "@/lib/pdf-lookup-utils"
+import { calculateBatchSize, yieldToBrowser } from "@/lib/batch-processing"
+import { withTimeout } from "@/lib/timeout-utils"
 import { DELAYS, TIMEOUTS } from "@/lib/constants"
 import { logger } from "@/lib/logger"
 
@@ -18,43 +21,19 @@ import { logger } from "@/lib/logger"
 import type { PdfFile, UnifiedPage } from "@/lib/types"
 
 interface UsePdfProcessingReturn {
-  isProcessing: boolean
-  extractPage: (unifiedPageNumber: number) => Promise<void>
-  downloadMerged: () => Promise<void>
+  readonly isProcessing: boolean
+  readonly extractPage: (unifiedPageNumber: number) => Promise<void>
+  readonly downloadMerged: () => Promise<void>
 }
 
 interface UsePdfProcessingParams {
-  pdfFiles: PdfFile[]
-  unifiedPages: UnifiedPage[]
-  pageOrder: number[]
-  deletedPages: Set<number>
-  pageRotations: Record<number, number>
-  getCachedPdf: (fileId: string, file: File, fileType: 'pdf' | 'image') => Promise<PDFDocument>
-  onError: (error: string | null) => void
-}
-
-/**
- * Wraps a promise with a timeout. If the promise doesn't resolve within the timeout,
- * it rejects with a timeout error.
- * 
- * @param promise - The promise to wrap
- * @param timeoutMs - Timeout in milliseconds
- * @param errorMessage - Custom error message for timeout
- * @returns A promise that either resolves with the original value or rejects on timeout
- */
-function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  errorMessage: string = "Operation timed out"
-): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error(errorMessage))
-      }, timeoutMs)
-    }),
-  ])
+  readonly pdfFiles: ReadonlyArray<PdfFile>
+  readonly unifiedPages: ReadonlyArray<UnifiedPage>
+  readonly pageOrder: ReadonlyArray<number>
+  readonly deletedPages: ReadonlySet<number>
+  readonly pageRotations: Readonly<Record<number, number>>
+  readonly getCachedPdf: (fileId: string, file: File, fileType: 'pdf' | 'image') => Promise<PDFDocument>
+  readonly onError: (error: string | null) => void
 }
 
 /**
@@ -82,6 +61,11 @@ export function usePdfProcessing({
    * already converted to a PDF, so extraction works identically to PDF pages.
    * 
    * @param unifiedPageNumber - The unified page number to extract
+   * @throws {Error} If no files are loaded, page is not found, or file cannot be loaded
+   * @example
+   * ```typescript
+   * await extractPage(5) // Extracts the 5th page in the unified page system
+   * ```
    */
   const extractPage = React.useCallback(async (unifiedPageNumber: number): Promise<void> => {
     if (pdfFiles.length === 0 || unifiedPages.length === 0) {
@@ -89,13 +73,17 @@ export function usePdfProcessing({
       return
     }
 
-    const page = unifiedPages.find(p => p.unifiedPageNumber === unifiedPageNumber)
+    // Use Map for O(1) lookup instead of O(n) Array.find()
+    const pageMap = createPageMap(unifiedPages)
+    const fileMap = createFileMap(pdfFiles)
+    
+    const page = pageMap.get(unifiedPageNumber)
     if (!page) {
       onError("Page not found.")
       return
     }
 
-    const file = pdfFiles.find(f => f.id === page.fileId)
+    const file = fileMap.get(page.fileId)
     if (!file) {
       onError("File not found for page.")
       return
@@ -148,8 +136,7 @@ export function usePdfProcessing({
 
       onError(null)
     } catch (err) {
-      const userMessage = formatPdfError(err, "Can't extract page:")
-      onError(userMessage)
+      handleError(err, "Can't extract page:", onError)
     } finally {
       setIsProcessing(false)
     }
@@ -162,6 +149,17 @@ export function usePdfProcessing({
    * Pages are merged in the order specified by pageOrder, excluding deleted pages.
    * User-applied rotations are preserved in the merged PDF. Images are already converted
    * to PDF pages, so they are handled identically to PDF pages.
+   * 
+   * Uses batch processing to prevent UI blocking: processes pages in batches of 3-10
+   * (depending on total page count), yielding to the browser between batches to keep
+   * the UI responsive. Smaller batches are used for large documents to maintain
+   * responsiveness, while larger batches improve throughput for smaller documents.
+   * 
+   * @throws {Error} If no files are loaded, all pages are deleted, or processing fails
+   * @example
+   * ```typescript
+   * await downloadMerged() // Merges all active pages and triggers download
+   * ```
    */
   const downloadMerged = React.useCallback(async (): Promise<void> => {
     if (pdfFiles.length === 0 || unifiedPages.length === 0) {
@@ -186,18 +184,22 @@ export function usePdfProcessing({
       const pageMap = createPageMap(unifiedPages)
       const fileMap = createFileMap(pdfFiles)
 
-      // Adaptive batch size: smaller batches for large documents to keep UI responsive
-      // Larger batches for small documents to improve throughput
-      // Calculate batch size based on total pages (simple calculation, no memoization needed)
-      const totalPages = activePages.length
-      const BATCH_SIZE = totalPages <= 10 ? 10 : totalPages <= 50 ? 8 : totalPages <= 100 ? 5 : 3
+      // Calculate optimal batch size using utility function
+      // Batch processing strategy: process pages in small batches (3-10 pages)
+      // to prevent UI blocking. Smaller batches for large documents maintain
+      // responsiveness, while larger batches improve throughput for smaller documents.
+      const totalPages: number = activePages.length
+      const BATCH_SIZE: number = calculateBatchSize(totalPages)
       
+      // Process pages in batches, yielding to browser between batches
       for (let i = 0; i < activePages.length; i += BATCH_SIZE) {
         const batch = activePages.slice(i, i + BATCH_SIZE)
         
+        // Process all pages in the current batch in parallel
+        // Each page is loaded, copied, and rotated (if needed) within the batch
         await withTimeout(
           Promise.all(
-            batch.map(async (unifiedPageNum) => {
+            batch.map(async (unifiedPageNum: number) => {
               const page = pageMap.get(unifiedPageNum)
               if (!page) {
                 throw new Error(`Page ${unifiedPageNum} not found in unified pages`)
@@ -237,12 +239,10 @@ export function usePdfProcessing({
                   )
                 }
               } catch (err) {
-                logger.error('Error processing page:', err)
+                const errorInfo = createPdfErrorInfo(err, `Can't process page from '${file.file.name}':`)
+                logger.error('Error processing page:', errorInfo)
                 logger.error('File details:', { id: file.id, name: file.file.name, type: file.type })
-                const userMessage = err instanceof Error 
-                  ? err.message 
-                  : formatPdfError(err, `Can't process page from '${file.file.name}':`)
-                throw new Error(userMessage)
+                throw errorInfo // Throw the error info object to preserve error type
               }
             })
           ),
@@ -251,14 +251,10 @@ export function usePdfProcessing({
         )
 
         // Yield to browser between batches to prevent UI blocking
+        // This allows the browser to update the UI, handle user interactions,
+        // and prevents the page from appearing frozen during large merges
         if (i + BATCH_SIZE < activePages.length) {
-          await new Promise<void>((resolve) => {
-            if ('requestIdleCallback' in window) {
-              requestIdleCallback(() => resolve(), { timeout: 100 })
-            } else {
-              setTimeout(() => resolve(), 0)
-            }
-          })
+          await yieldToBrowser(100)
         }
       }
 
@@ -276,11 +272,14 @@ export function usePdfProcessing({
 
       onError(null)
     } catch (err) {
-      logger.error('Download error:', err)
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : "Download failed. Check that all files are valid and try again."
-      onError(errorMessage)
+      const errorInfo = handleError(err, "Download failed:", onError)
+      // Provide more specific error message based on error type if needed
+      if (errorInfo && errorInfo.type !== PdfErrorType.TIMEOUT && errorInfo.type !== PdfErrorType.CORRUPTED) {
+        // Error already set by handleError, but we can enhance it if needed
+        if (!errorInfo.message || errorInfo.message === "Download failed: an error occurred. Please ensure the file is valid and not corrupted or password-protected, then try again.") {
+          onError("Download failed. Check that all files are valid and try again.")
+        }
+      }
     } finally {
       setIsProcessing(false)
     }
