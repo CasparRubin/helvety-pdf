@@ -15,6 +15,21 @@ const eslintConfig = defineConfig([
     // Ignore minified third-party files
     "public/pdf.worker.min.mjs",
   ]),
+  {
+    rules: {
+      // Allow unused variables/parameters prefixed with underscore
+      // This is a common pattern for intentionally unused parameters
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

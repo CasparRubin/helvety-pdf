@@ -53,6 +53,15 @@ export function usePdfProcessing({
   onError,
 }: UsePdfProcessingParams): UsePdfProcessingReturn {
   const [isProcessing, setIsProcessing] = React.useState(false)
+  
+  // Use ref to store latest pageRotations to avoid stale closure issues
+  // This ensures we always read the most current rotation state, even during rapid updates
+  const pageRotationsRef = React.useRef<Readonly<Record<number, number>>>(pageRotations)
+  
+  // Sync ref with prop changes to always have the latest state
+  React.useEffect(() => {
+    pageRotationsRef.current = pageRotations
+  }, [pageRotations])
 
   /**
    * Extracts a single page from a file (PDF or image) and downloads it as a new PDF.
@@ -108,7 +117,8 @@ export function usePdfProcessing({
       )
 
       // Apply rotation if user has rotated this page
-      const rotation = pageRotations[unifiedPageNumber] || 0
+      // Read from ref to ensure we have the latest rotation state, avoiding stale closure issues
+      const rotation = pageRotationsRef.current[unifiedPageNumber] || 0
       if (rotation !== 0) {
         const newPage = newPdf.getPage(0)
         const originalPage = pdf.getPage(pageIndex)
@@ -140,7 +150,7 @@ export function usePdfProcessing({
     } finally {
       setIsProcessing(false)
     }
-  }, [pdfFiles, unifiedPages, pageRotations, getCachedPdf, onError])
+  }, [pdfFiles, unifiedPages, getCachedPdf, onError])
 
   /**
    * Merges all active (non-deleted) pages from all files (PDFs and images) into a single PDF
@@ -177,6 +187,11 @@ export function usePdfProcessing({
     onError(null)
 
     try {
+      // Capture current rotation state at the start of export to ensure consistency
+      // throughout the async operation. This prevents race conditions where rotations
+      // are updated during the export process.
+      const currentRotations = pageRotationsRef.current
+      
       // Create single merged PDF
       const mergedPdf = await PDFDocument.create()
 
@@ -227,7 +242,8 @@ export function usePdfProcessing({
                 mergedPdf.addPage(copiedPage)
 
                 // Apply rotation if user has rotated this page
-                const rotation = pageRotations[unifiedPageNum] || 0
+                // Use captured rotations snapshot to ensure consistency across all pages in the export
+                const rotation = currentRotations[unifiedPageNum] || 0
                 if (rotation !== 0) {
                   const newPage = mergedPdf.getPage(mergedPdf.getPageCount() - 1)
                   const originalPage = pdf.getPage(pageIndex)
@@ -283,7 +299,7 @@ export function usePdfProcessing({
     } finally {
       setIsProcessing(false)
     }
-  }, [pdfFiles, unifiedPages, pageOrder, deletedPages, pageRotations, getCachedPdf, onError])
+  }, [pdfFiles, unifiedPages, pageOrder, deletedPages, getCachedPdf, onError])
 
   return {
     isProcessing,

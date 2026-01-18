@@ -3,7 +3,7 @@
  * Provides standardized error handling patterns and error transformation.
  */
 
-import { createPdfErrorInfo, PdfErrorType, type PdfErrorInfo } from "./pdf-errors"
+import { createPdfErrorInfo, type PdfErrorInfo } from "./pdf-errors"
 import { logger } from "./logger"
 
 /**

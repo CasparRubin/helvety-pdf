@@ -169,7 +169,7 @@ export function HelvetyPdf(): React.JSX.Element {
   }, [setError])
 
   // Handle click on empty drop zone to open file picker
-  const handleEmptyZoneClick = React.useCallback((e: React.MouseEvent<HTMLElement>): void => {
+  const handleEmptyZoneClick = React.useCallback((): void => {
     // Only trigger file picker when no files are present
     if (pdfFiles.length === 0 && fileInputRef.current) {
       fileInputRef.current.click()
