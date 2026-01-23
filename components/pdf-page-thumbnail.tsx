@@ -14,6 +14,7 @@ import {
   PDF_RENDER,
   ROTATION_ANGLES
 } from "@/lib/constants"
+import { PdfImageThumbnail } from "@/components/pdf-image-thumbnail"
 
 // Dynamically import react-pdf to avoid SSR issues
 const Document = dynamic(
@@ -465,24 +466,10 @@ function PdfPageThumbnailComponent({
           )}
           {!error && fileUrl && isVisible && !shouldUnmount && (
             fileType === 'image' ? (
-              // Render images using native img tag
-              // For 90/270 degree rotations, we need to swap dimensions to prevent clipping
-              // Note: Using native img element is necessary here because we're rendering
-              // user-uploaded images from blob URLs, not static Next.js Image assets.
-              // The @next/next/no-img-element rule is disabled for this specific use case.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={fileUrl}
-                alt={`Page ${pageNumber}`}
-                className="max-w-full max-h-full object-contain"
-                style={{
-                  transform: rotation ? `rotate(${rotation}deg)` : undefined,
-                  // For 90/270 rotations, swap width/height to prevent clipping
-                  width: (rotation === ROTATION_ANGLES.QUARTER || rotation === ROTATION_ANGLES.THREE_QUARTER) ? 'auto' : '100%',
-                  height: (rotation === ROTATION_ANGLES.QUARTER || rotation === ROTATION_ANGLES.THREE_QUARTER) ? '100%' : 'auto',
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                }}
+              <PdfImageThumbnail
+                fileUrl={fileUrl}
+                pageNumber={pageNumber}
+                rotation={rotation}
                 onLoad={() => {
                   setLoading(false)
                   setError(false)

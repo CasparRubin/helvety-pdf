@@ -2,9 +2,9 @@ import * as React from "react"
 import { DELAYS, CRITICAL_ERROR_PATTERNS } from "@/lib/constants"
 
 interface UseErrorHandlerReturn {
-  error: string | null
-  setError: React.Dispatch<React.SetStateAction<string | null>>
-  dismissError: () => void
+  readonly error: string | null
+  readonly setError: React.Dispatch<React.SetStateAction<string | null>>
+  readonly dismissError: () => void
 }
 
 /**

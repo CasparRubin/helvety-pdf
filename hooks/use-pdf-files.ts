@@ -37,8 +37,14 @@ interface UsePdfFilesReturn {
  * 
  * @param files - Array of files (PDFs and images) to process
  * @returns Array of unified pages with sequential numbering
+ * 
+ * @example
+ * ```typescript
+ * const pages = createUnifiedPages([pdfFile1, pdfFile2])
+ * // Returns: [{ id: 'file1-page-1', fileId: 'file1', ... }, ...]
+ * ```
  */
-function createUnifiedPages(files: PdfFile[]): UnifiedPage[] {
+function createUnifiedPages(files: ReadonlyArray<PdfFile>): UnifiedPage[] {
   const pages: UnifiedPage[] = []
   let unifiedNumber = 1
 
@@ -68,6 +74,8 @@ export function usePdfFiles(): UsePdfFilesReturn {
   const [pageOrder, setPageOrder] = React.useState<number[]>([])
   const pdfCacheRef = React.useRef<Map<string, PDFDocument>>(new Map())
   const lastUploadTimeRef = React.useRef<number>(0)
+  // Use ref to store current pdfFiles to avoid recreating validateAndAddFiles callback
+  const pdfFilesRef = React.useRef<PdfFile[]>(pdfFiles)
 
   /**
    * Gets a cached PDF document or loads it if not in cache.
@@ -78,32 +86,64 @@ export function usePdfFiles(): UsePdfFilesReturn {
    * @param file - The File object to load if not cached
    * @param fileType - File type ('pdf' | 'image') to determine loading strategy
    * @returns A promise that resolves to the PDFDocument
+   * @throws {Error} If fileId is invalid, file is not found, or loading/conversion fails
+   * 
+   * @example
+   * ```typescript
+   * const pdf = await getCachedPdf('file-123', file, 'pdf')
+   * // Returns cached PDF or loads from file if not cached
+   * ```
    */
   const getCachedPdf = React.useCallback(async (fileId: string, file: File, fileType: 'pdf' | 'image'): Promise<PDFDocument> => {
+    // Validate fileId
+    if (!fileId || typeof fileId !== 'string' || fileId.trim().length === 0) {
+      throw new Error(`Invalid fileId provided: "${fileId}". File: "${file.name}"`)
+    }
+
+    // Validate file exists in current files list
+    const currentFiles = pdfFilesRef.current
+    const fileExists = currentFiles.some((f) => f.id === fileId)
+    if (!fileExists) {
+      throw new Error(`File with ID "${fileId}" not found. File may have been removed. Original file: "${file.name}"`)
+    }
+
     const cached = pdfCacheRef.current.get(fileId)
     if (cached) {
-      logger.log(`Retrieved cached PDF for ${fileType} file:`, file.name, 'with ID:', fileId)
+      // Update LRU access order by moving to end (most recently used)
+      // This prevents frequently accessed items from being evicted
+      pdfCacheRef.current.delete(fileId)
+      pdfCacheRef.current.set(fileId, cached)
+      logger.log(`Retrieved cached PDF for ${fileType} file: "${file.name}" (ID: ${fileId})`)
       return cached
     }
     
     // For images, try to re-convert if cache is missing (fallback)
     // This can happen if cache was cleared or file was uploaded before caching was implemented
     if (fileType === 'image') {
-      logger.warn('Cache miss for image, re-converting:', file.name, 'ID:', fileId)
+      logger.warn(`Cache miss for image: "${file.name}" (ID: ${fileId}). Re-converting...`)
       logger.warn('Available cache keys:', Array.from(pdfCacheRef.current.keys()))
       try {
         // Re-convert the image to PDF
         const pdf = await convertImageToPdf(file)
         pdfCacheRef.current.set(fileId, pdf)
+        logger.log(`Re-converted and cached image: "${file.name}" (ID: ${fileId})`)
         return pdf
       } catch (err) {
-        throw new Error(`Failed to convert image to PDF: ${file.name}. ${err instanceof Error ? err.message : String(err)}`)
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        throw new Error(`Failed to convert image to PDF: "${file.name}" (ID: ${fileId}). ${errorMessage}`)
       }
     }
+    
     // For PDFs, load from file
-    const pdf = await loadPdfFromFile(file)
-    pdfCacheRef.current.set(fileId, pdf)
-    return pdf
+    try {
+      const pdf = await loadPdfFromFile(file)
+      pdfCacheRef.current.set(fileId, pdf)
+      logger.log(`Loaded and cached PDF: "${file.name}" (ID: ${fileId})`)
+      return pdf
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      throw new Error(`Failed to load PDF: "${file.name}" (ID: ${fileId}). ${errorMessage}`)
+    }
   }, [])
 
   /**
@@ -137,7 +177,9 @@ export function usePdfFiles(): UsePdfFilesReturn {
     lastUploadTimeRef.current = Date.now()
 
     // Validate files using extracted utility
-    const validationResult = validateFiles(fileArray, pdfFiles)
+    // Use ref to get current pdfFiles without creating dependency
+    const currentPdfFiles = pdfFilesRef.current
+    const validationResult = validateFiles(fileArray, currentPdfFiles)
     if (!validationResult.valid) {
       const errorMessage = formatValidationErrors(validationResult.errors)
       onError(errorMessage)
@@ -149,7 +191,7 @@ export function usePdfFiles(): UsePdfFilesReturn {
     // Process each file
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i]
-      const fileIndex = pdfFiles.length + pdfFilesToAdd.length
+      const fileIndex = currentPdfFiles.length + pdfFilesToAdd.length
       
       const result = await processFile(file, fileIndex, pdfCacheRef.current)
       
@@ -171,6 +213,11 @@ export function usePdfFiles(): UsePdfFilesReturn {
         onError(null)
       }
     }
+  }, []) // Removed pdfFiles dependency - using ref instead for better performance
+
+  // Keep ref in sync with state
+  React.useEffect(() => {
+    pdfFilesRef.current = pdfFiles
   }, [pdfFiles])
 
   // Update unified pages when files change

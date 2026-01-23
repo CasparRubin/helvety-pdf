@@ -7,11 +7,11 @@ import { SCREEN_BREAKPOINTS } from "@/lib/constants"
 export type ScreenSize = "mobile" | "tablet" | "desktop"
 
 interface UseScreenSizeReturn {
-  screenSize: ScreenSize
-  width: number
-  isMobile: boolean
-  isTablet: boolean
-  isDesktop: boolean
+  readonly screenSize: ScreenSize
+  readonly width: number
+  readonly isMobile: boolean
+  readonly isTablet: boolean
+  readonly isDesktop: boolean
 }
 
 /**

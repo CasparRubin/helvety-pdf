@@ -1,11 +1,11 @@
 import * as React from "react"
 
 interface UseDragDropReturn {
-  isDragging: boolean
-  handleDragEnter: (e: React.DragEvent) => void
-  handleDragLeave: (e: React.DragEvent) => void
-  handleDragOver: (e: React.DragEvent) => void
-  handleDrop: (e: React.DragEvent, onFilesDropped: (files: FileList) => void) => void
+  readonly isDragging: boolean
+  readonly handleDragEnter: (e: React.DragEvent) => void
+  readonly handleDragLeave: (e: React.DragEvent) => void
+  readonly handleDragOver: (e: React.DragEvent) => void
+  readonly handleDrop: (e: React.DragEvent, onFilesDropped: (files: FileList) => void) => void
 }
 
 /**

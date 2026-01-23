@@ -6,7 +6,7 @@ import { PDFDocument } from "pdf-lib"
 
 // Internal utilities
 import { formatTimestamp } from "@/lib/utils"
-import { createPdfErrorInfo, PdfErrorType } from "@/lib/pdf-errors"
+import { createPdfErrorInfo } from "@/lib/pdf-errors"
 import { handleError } from "@/lib/error-handler"
 import { downloadBlob } from "@/lib/file-download"
 import { applyPageRotation } from "@/lib/pdf-rotation"
@@ -78,7 +78,7 @@ export function usePdfProcessing({
    */
   const extractPage = React.useCallback(async (unifiedPageNumber: number): Promise<void> => {
     if (pdfFiles.length === 0 || unifiedPages.length === 0) {
-      onError("No files loaded.")
+      onError("No files loaded. Please add at least one file before extracting a page.")
       return
     }
 
@@ -88,13 +88,13 @@ export function usePdfProcessing({
     
     const page = pageMap.get(unifiedPageNumber)
     if (!page) {
-      onError("Page not found.")
+      onError(`Page ${unifiedPageNumber} not found in unified pages.`)
       return
     }
 
     const file = fileMap.get(page.fileId)
     if (!file) {
-      onError("File not found for page.")
+      onError(`File not found for page ${unifiedPageNumber} (fileId: ${page.fileId}).`)
       return
     }
 
@@ -173,13 +173,13 @@ export function usePdfProcessing({
    */
   const downloadMerged = React.useCallback(async (): Promise<void> => {
     if (pdfFiles.length === 0 || unifiedPages.length === 0) {
-      onError("Add at least one file to download.")
+      onError("Cannot download. No files loaded. Please add at least one file before downloading.")
       return
     }
 
     const activePages = pageOrder.filter(pageNum => !deletedPages.has(pageNum))
     if (activePages.length === 0) {
-      onError("Cannot download. All pages are deleted. At least one page must remain.")
+      onError("Cannot download. All pages are deleted. At least one page must remain in the document.")
       return
     }
 
@@ -207,64 +207,98 @@ export function usePdfProcessing({
       const BATCH_SIZE: number = calculateBatchSize(totalPages)
       
       // Process pages in batches, yielding to browser between batches
+      const batchErrors: Array<{ pageNum: number; error: string }> = []
+      const totalBatches = Math.ceil(activePages.length / BATCH_SIZE)
+      
       for (let i = 0; i < activePages.length; i += BATCH_SIZE) {
         const batch = activePages.slice(i, i + BATCH_SIZE)
+        const batchNumber = Math.floor(i / BATCH_SIZE) + 1
         
-        // Process all pages in the current batch in parallel
-        // Each page is loaded, copied, and rotated (if needed) within the batch
-        await withTimeout(
-          Promise.all(
-            batch.map(async (unifiedPageNum: number) => {
-              const page = pageMap.get(unifiedPageNum)
-              if (!page) {
-                throw new Error(`Page ${unifiedPageNum} not found in unified pages`)
-              }
-
-              const file = fileMap.get(page.fileId)
-              if (!file) {
-                throw new Error(`File not found for page ${unifiedPageNum}`)
-              }
-
-              // Validate file has required properties
-              if (!file.id || !file.file || !file.type) {
-                throw new Error(`Invalid file data for page ${unifiedPageNum}`)
-              }
-
-              try {
-                // Get cached PDF (for images, this is the converted PDF)
-                const pdf = await withTimeout(
-                  getCachedPdf(file.id, file.file, file.type),
-                  TIMEOUTS.FILE_LOAD_TIMEOUT,
-                  `Loading file '${file.file.name}' timed out.`
-                )
-                const pageIndex = page.originalPageNumber - 1
-                const [copiedPage] = await mergedPdf.copyPages(pdf, [pageIndex])
-                mergedPdf.addPage(copiedPage)
-
-                // Apply rotation if user has rotated this page
-                // Use captured rotations snapshot to ensure consistency across all pages in the export
-                const rotation = currentRotations[unifiedPageNum] || 0
-                if (rotation !== 0) {
-                  const newPage = mergedPdf.getPage(mergedPdf.getPageCount() - 1)
-                  const originalPage = pdf.getPage(pageIndex)
-                  // Pass isImage flag to handle dimension swapping for rotated images
-                  await withTimeout(
-                    applyPageRotation(originalPage, newPage, rotation, file.type === 'image'),
-                    TIMEOUTS.OPERATION_TIMEOUT,
-                    "Applying rotation timed out."
-                  )
+        try {
+          // Process all pages in the current batch in parallel
+          // Each page is loaded, copied, and rotated (if needed) within the batch
+          // Use a longer timeout for entire batch (allows for multiple pages)
+          const batchTimeout = Math.min(
+            TIMEOUTS.OPERATION_TIMEOUT * batch.length, // Scale timeout with batch size
+            TIMEOUTS.OPERATION_TIMEOUT * 3 // Cap at 3x single operation timeout
+          )
+          
+          await withTimeout(
+            Promise.allSettled(
+              batch.map(async (unifiedPageNum: number) => {
+                const page = pageMap.get(unifiedPageNum)
+                if (!page) {
+                  throw new Error(`Page ${unifiedPageNum} not found in unified pages. Available pages: ${Array.from(pageMap.keys()).join(', ')}`)
                 }
-              } catch (err) {
-                const errorInfo = createPdfErrorInfo(err, `Can't process page from '${file.file.name}':`)
-                logger.error('Error processing page:', errorInfo)
-                logger.error('File details:', { id: file.id, name: file.file.name, type: file.type })
-                throw errorInfo // Throw the error info object to preserve error type
+
+                const file = fileMap.get(page.fileId)
+                if (!file) {
+                  throw new Error(`File not found for page ${unifiedPageNum} (fileId: ${page.fileId}). Available files: ${Array.from(fileMap.keys()).join(', ')}`)
+                }
+
+                // Validate file has required properties
+                if (!file.id || !file.file || !file.type) {
+                  throw new Error(`Invalid file data for page ${unifiedPageNum} (fileId: ${file.id || 'missing'}, fileName: ${file.file?.name || 'missing'}, type: ${file.type || 'missing'})`)
+                }
+
+                try {
+                  // Get cached PDF (for images, this is the converted PDF)
+                  // Each page operation has its own timeout for better error isolation
+                  const pdf = await withTimeout(
+                    getCachedPdf(file.id, file.file, file.type),
+                    TIMEOUTS.FILE_LOAD_TIMEOUT,
+                    `Loading file '${file.file.name}' for page ${unifiedPageNum} timed out after ${TIMEOUTS.FILE_LOAD_TIMEOUT}ms.`
+                  )
+                  const pageIndex = page.originalPageNumber - 1
+                  const [copiedPage] = await mergedPdf.copyPages(pdf, [pageIndex])
+                  mergedPdf.addPage(copiedPage)
+
+                  // Apply rotation if user has rotated this page
+                  // Use captured rotations snapshot to ensure consistency across all pages in the export
+                  const rotation = currentRotations[unifiedPageNum] || 0
+                  if (rotation !== 0) {
+                    const newPage = mergedPdf.getPage(mergedPdf.getPageCount() - 1)
+                    const originalPage = pdf.getPage(pageIndex)
+                    // Pass isImage flag to handle dimension swapping for rotated images
+                    await withTimeout(
+                      applyPageRotation(originalPage, newPage, rotation, file.type === 'image'),
+                      TIMEOUTS.OPERATION_TIMEOUT,
+                      `Applying rotation to page ${unifiedPageNum} timed out after ${TIMEOUTS.OPERATION_TIMEOUT}ms.`
+                    )
+                  }
+                } catch (err) {
+                  const errorInfo = createPdfErrorInfo(err, `Can't process page ${unifiedPageNum} from '${file.file.name}':`)
+                  logger.error('Error processing page:', errorInfo)
+                  logger.error('File details:', { id: file.id, name: file.file.name, type: file.type, pageNum: unifiedPageNum })
+                  throw errorInfo // Throw the error info object to preserve error type
+                }
+              })
+            ),
+            batchTimeout,
+            `Processing batch ${batchNumber}/${totalBatches} (pages ${i + 1}-${Math.min(i + BATCH_SIZE, activePages.length)}) timed out after ${batchTimeout}ms. Try processing fewer pages at once.`
+          ).then((results) => {
+            // Collect errors from failed pages but continue processing
+            results.forEach((result, idx) => {
+              if (result.status === 'rejected') {
+                const pageNum = batch[idx]
+                const errorMessage = result.reason instanceof Error ? result.reason.message : String(result.reason)
+                batchErrors.push({ pageNum, error: errorMessage })
+                logger.error(`Page ${pageNum} failed in batch ${batchNumber}:`, errorMessage)
               }
             })
-          ),
-          TIMEOUTS.OPERATION_TIMEOUT,
-          `Processing batch ${Math.floor(i / BATCH_SIZE) + 1} timed out. Please try again with fewer pages.`
-        )
+            
+            // If all pages in batch failed, throw error
+            if (results.every(r => r.status === 'rejected')) {
+              throw new Error(`All pages in batch ${batchNumber} failed. First error: ${results[0].status === 'rejected' ? results[0].reason : 'unknown'}`)
+            }
+          })
+
+        } catch (err) {
+          // Batch-level timeout or all pages failed
+          const errorInfo = createPdfErrorInfo(err, `Batch ${batchNumber}/${totalBatches} processing failed:`)
+          logger.error('Batch processing error:', errorInfo)
+          throw errorInfo
+        }
 
         // Yield to browser between batches to prevent UI blocking
         // This allows the browser to update the UI, handle user interactions,
@@ -272,6 +306,12 @@ export function usePdfProcessing({
         if (i + BATCH_SIZE < activePages.length) {
           await yieldToBrowser(100)
         }
+      }
+      
+      // Report any page-level errors that occurred but didn't stop processing
+      if (batchErrors.length > 0) {
+        logger.warn(`${batchErrors.length} page(s) failed during processing:`, batchErrors)
+        // Continue processing - some pages may have succeeded
       }
 
       const pdfBytes = await withTimeout(
@@ -288,14 +328,8 @@ export function usePdfProcessing({
 
       onError(null)
     } catch (err) {
-      const errorInfo = handleError(err, "Download failed:", onError)
-      // Provide more specific error message based on error type if needed
-      if (errorInfo && errorInfo.type !== PdfErrorType.TIMEOUT && errorInfo.type !== PdfErrorType.CORRUPTED) {
-        // Error already set by handleError, but we can enhance it if needed
-        if (!errorInfo.message || errorInfo.message === "Download failed: an error occurred. Please ensure the file is valid and not corrupted or password-protected, then try again.") {
-          onError("Download failed. Check that all files are valid and try again.")
-        }
-      }
+      // Standardized error handling - handleError already sets appropriate error message
+      handleError(err, "Download failed:", onError)
     } finally {
       setIsProcessing(false)
     }

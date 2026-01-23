@@ -8,9 +8,19 @@ import type { PdfFile, UnifiedPage } from "./types"
 
 /**
  * Creates a map of unified page numbers to UnifiedPage objects for O(1) lookups.
+ * Converts O(n) Array.find() operations to O(1) Map lookups for better performance.
  * 
  * @param unifiedPages - Array of unified pages to convert to a map
  * @returns Map from unified page number to UnifiedPage object
+ * 
+ * @example
+ * ```typescript
+ * const pageMap = createPageMap(unifiedPages)
+ * const page = pageMap.get(5) // O(1) lookup instead of O(n) Array.find()
+ * if (page) {
+ *   console.log(`Page 5 is from file ${page.fileId}`)
+ * }
+ * ```
  */
 export function createPageMap(unifiedPages: ReadonlyArray<UnifiedPage>): Map<number, UnifiedPage> {
   const map = new Map<number, UnifiedPage>()
@@ -22,9 +32,19 @@ export function createPageMap(unifiedPages: ReadonlyArray<UnifiedPage>): Map<num
 
 /**
  * Creates a map of file IDs to PdfFile objects for O(1) lookups.
+ * Converts O(n) Array.find() operations to O(1) Map lookups for better performance.
  * 
  * @param pdfFiles - Array of PDF files to convert to a map
  * @returns Map from file ID to PdfFile object
+ * 
+ * @example
+ * ```typescript
+ * const fileMap = createFileMap(pdfFiles)
+ * const file = fileMap.get('file-123') // O(1) lookup
+ * if (file) {
+ *   console.log(`File: ${file.file.name}, Pages: ${file.pageCount}`)
+ * }
+ * ```
  */
 export function createFileMap(pdfFiles: ReadonlyArray<PdfFile>): Map<string, PdfFile> {
   const map = new Map<string, PdfFile>()
@@ -36,9 +56,20 @@ export function createFileMap(pdfFiles: ReadonlyArray<PdfFile>): Map<string, Pdf
 
 /**
  * Creates a map of file IDs to blob URLs for O(1) lookups.
+ * Converts O(n) Array.find() operations to O(1) Map lookups for better performance.
  * 
  * @param pdfFiles - Array of PDF files to extract URLs from
  * @returns Map from file ID to blob URL string
+ * 
+ * @example
+ * ```typescript
+ * const urlMap = createFileUrlMap(pdfFiles)
+ * const url = urlMap.get('file-123') // O(1) lookup
+ * if (url) {
+ *   // Use URL for preview
+ *   imageElement.src = url
+ * }
+ * ```
  */
 export function createFileUrlMap(pdfFiles: ReadonlyArray<PdfFile>): Map<string, string> {
   const map = new Map<string, string>()

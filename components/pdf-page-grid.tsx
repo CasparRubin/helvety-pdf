@@ -206,51 +206,41 @@ function PdfPageGridComponent({
             onDrop={(e) => dragDrop.handleDrop(e, index)}
             onDragEnd={dragDrop.handleDragEnd}
             onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
+              // Helper function to announce page reordering to screen readers
+              const announceReorder = (direction: string, newPosition: number): void => {
+                const announcement = document.getElementById('page-reorder-announcement')
+                if (announcement) {
+                  announcement.textContent = `Page ${unifiedPageNumber} moved ${direction} to position ${newPosition} of ${pageOrder.length}`
+                }
+              }
+
               // Keyboard navigation for drag and drop
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
-                // Focus management for keyboard users
-                if (e.key === 'Enter') {
-                  // Trigger action panel or menu for keyboard users
-                  // The action buttons are accessible via tab navigation
-                }
+                // Space or Enter activates the page item
+                // Action buttons are accessible via tab navigation
+                // Focus remains on the page item for keyboard users
               }
               // Arrow key navigation for reordering
-              if (e.key === 'ArrowUp' && index > 0) {
+              else if (e.key === 'ArrowUp' && index > 0) {
                 e.preventDefault()
                 handleMoveUp(index)
-                // Announce reordering to screen readers
-                const announcement = document.getElementById('page-reorder-announcement')
-                if (announcement) {
-                  announcement.textContent = `Page ${unifiedPageNumber} moved up to position ${index}`
-                }
+                announceReorder('up', index)
               }
-              if (e.key === 'ArrowDown' && index < pageOrder.length - 1) {
+              else if (e.key === 'ArrowDown' && index < pageOrder.length - 1) {
                 e.preventDefault()
                 handleMoveDown(index)
-                // Announce reordering to screen readers
-                const announcement = document.getElementById('page-reorder-announcement')
-                if (announcement) {
-                  announcement.textContent = `Page ${unifiedPageNumber} moved down to position ${index + 2}`
-                }
+                announceReorder('down', index + 2)
               }
-              if (e.key === 'ArrowLeft' && index > 0) {
+              else if (e.key === 'ArrowLeft' && index > 0) {
                 e.preventDefault()
                 handleMoveUp(index)
-                // Announce reordering to screen readers
-                const announcement = document.getElementById('page-reorder-announcement')
-                if (announcement) {
-                  announcement.textContent = `Page ${unifiedPageNumber} moved left to position ${index}`
-                }
+                announceReorder('left', index)
               }
-              if (e.key === 'ArrowRight' && index < pageOrder.length - 1) {
+              else if (e.key === 'ArrowRight' && index < pageOrder.length - 1) {
                 e.preventDefault()
                 handleMoveDown(index)
-                // Announce reordering to screen readers
-                const announcement = document.getElementById('page-reorder-announcement')
-                if (announcement) {
-                  announcement.textContent = `Page ${unifiedPageNumber} moved right to position ${index + 2}`
-                }
+                announceReorder('right', index + 2)
               }
             }}
             className={cn(
@@ -301,77 +291,143 @@ function PdfPageGridComponent({
 }
 
 /**
+ * Type guard to check if two arrays have the same reference or identical content.
+ * 
+ * @param prev - Previous array
+ * @param next - Next array
+ * @returns True if arrays are the same reference or have identical content
+ */
+function areArraysEqual<T>(prev: ReadonlyArray<T>, next: ReadonlyArray<T>): boolean {
+  if (prev === next) return true
+  if (prev.length !== next.length) return false
+  return !prev.some((val, idx) => val !== next[idx])
+}
+
+/**
+ * Type guard to check if two Sets are equal.
+ * 
+ * @param prev - Previous Set
+ * @param next - Next Set
+ * @returns True if Sets have the same size and all elements match
+ */
+function areSetsEqual(prev: ReadonlySet<number>, next: ReadonlySet<number>): boolean {
+  if (prev.size !== next.size) return false
+  for (const item of prev) {
+    if (!next.has(item)) return false
+  }
+  return true
+}
+
+/**
+ * Type guard to check if two rotation objects are equal.
+ * 
+ * @param prev - Previous rotations object
+ * @param next - Next rotations object
+ * @returns True if rotation objects have identical keys and values
+ */
+function areRotationsEqual(
+  prev: Readonly<Record<number, number>>,
+  next: Readonly<Record<number, number>>
+): boolean {
+  const prevKeys = Object.keys(prev).map(Number)
+  const nextKeys = Object.keys(next).map(Number)
+  
+  if (prevKeys.length !== nextKeys.length) return false
+  
+  for (const key of prevKeys) {
+    if (prev[key] !== next[key]) return false
+  }
+  return true
+}
+
+/**
  * Custom comparison function for React.memo to optimize re-renders.
  * Only re-renders when props actually change.
+ * 
+ * Optimized comparison order (fastest to slowest):
+ * 1. Primitives (isProcessing, columns) - O(1)
+ * 2. Function references - O(1), usually stable
+ * 3. Array references - O(1) if same reference
+ * 4. Array lengths - O(1)
+ * 5. Array content comparison - O(n) where n is array length
+ * 6. Set size and content - O(n) where n is set size
+ * 7. Object key/value comparison - O(n) where n is object keys
+ * 
+ * Performance notes:
+ * - Re-renders occur when: props change, arrays are recreated with different content,
+ *   deleted pages change, rotations change, or callback functions change
+ * - Early short-circuiting prevents expensive deep comparisons when possible
  */
 function arePropsEqual(
   prevProps: PdfPageGridProps,
   nextProps: PdfPageGridProps
 ): boolean {
-  // Compare primitive values first (fastest check)
+  // 1. Compare primitive values first (fastest check - O(1))
   if (
     prevProps.isProcessing !== nextProps.isProcessing ||
     prevProps.columns !== nextProps.columns
   ) {
-    return false // Props changed, re-render
+    return false
   }
 
-  // Compare array lengths (fast check)
+  // 2. Compare function references early (O(1), usually stable but check before expensive ops)
+  if (
+    prevProps.onReorder !== nextProps.onReorder ||
+    prevProps.onToggleDelete !== nextProps.onToggleDelete ||
+    prevProps.onRotate !== nextProps.onRotate ||
+    prevProps.onResetRotation !== nextProps.onResetRotation ||
+    prevProps.onExtract !== nextProps.onExtract
+  ) {
+    return false
+  }
+
+  // 3. Compare array references (very fast - O(1) if same reference)
+  if (
+    prevProps.pdfFiles === nextProps.pdfFiles &&
+    prevProps.unifiedPages === nextProps.unifiedPages &&
+    prevProps.pageOrder === nextProps.pageOrder
+  ) {
+    // Arrays are same reference - only need to check Sets and objects
+    return (
+      areSetsEqual(prevProps.deletedPages, nextProps.deletedPages) &&
+      areRotationsEqual(prevProps.pageRotations, nextProps.pageRotations)
+    )
+  }
+
+  // 4. Array references differ - check lengths first (fast check - O(1))
   if (
     prevProps.pageOrder.length !== nextProps.pageOrder.length ||
     prevProps.pdfFiles.length !== nextProps.pdfFiles.length ||
     prevProps.unifiedPages.length !== nextProps.unifiedPages.length
   ) {
-    return false // Array lengths changed, re-render
-  }
-
-  // Compare page order (if order changed, we need to re-render)
-  if (prevProps.pageOrder.some((val, idx) => val !== nextProps.pageOrder[idx])) {
     return false
   }
 
-  // Check if deleted pages changed (optimized: check size first, then verify all items match)
-  if (prevProps.deletedPages.size !== nextProps.deletedPages.size) {
+  // 5. Compare page order contents (O(n) where n is pageOrder length)
+  if (!areArraysEqual(prevProps.pageOrder, nextProps.pageOrder)) {
     return false
   }
-  // If sizes match, verify all items match (Set equality check)
-  // Since Sets are equal if they have the same size and all elements from one exist in the other
-  for (const pageNum of prevProps.deletedPages) {
-    if (!nextProps.deletedPages.has(pageNum)) {
-      return false
-    }
-  }
 
-  // Check if rotations changed
-  const prevRotationKeys = Object.keys(prevProps.pageRotations)
-  const nextRotationKeys = Object.keys(nextProps.pageRotations)
-  if (prevRotationKeys.length !== nextRotationKeys.length) {
-    return false
-  }
-  for (const key of prevRotationKeys) {
-    if (prevProps.pageRotations[Number(key)] !== nextProps.pageRotations[Number(key)]) {
-      return false
-    }
-  }
-
-  // Compare array references (if references are same, arrays haven't changed)
+  // 6. Arrays have same length and order, but different references
+  // Assume they need re-render for safety (deep comparison would be expensive)
   if (
     prevProps.pdfFiles !== nextProps.pdfFiles ||
     prevProps.unifiedPages !== nextProps.unifiedPages
   ) {
-    // Arrays changed, need to re-render
     return false
   }
 
-  // Functions are compared by reference - if they're stable, this is fine
-  // If they changed, we want to re-render anyway
-  return (
-    prevProps.onReorder === nextProps.onReorder &&
-    prevProps.onToggleDelete === nextProps.onToggleDelete &&
-    prevProps.onRotate === nextProps.onRotate &&
-    prevProps.onResetRotation === nextProps.onResetRotation &&
-    prevProps.onExtract === nextProps.onExtract
-  )
+  // 7. Check if deleted pages changed (O(n) where n is set size)
+  if (!areSetsEqual(prevProps.deletedPages, nextProps.deletedPages)) {
+    return false
+  }
+
+  // 8. Check if rotations changed (O(n) where n is rotation keys)
+  if (!areRotationsEqual(prevProps.pageRotations, nextProps.pageRotations)) {
+    return false
+  }
+
+  return true
 }
 
 // Memoize component to prevent unnecessary re-renders

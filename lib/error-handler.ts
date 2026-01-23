@@ -131,13 +131,23 @@ export async function withErrorHandling<T>(
 }
 
 /**
+ * Type guard to check if an error is not null or undefined.
+ * 
+ * @param error - The error to check
+ * @returns True if error is not null or undefined
+ */
+function isErrorDefined(error: unknown): error is NonNullable<unknown> {
+  return error !== null && error !== undefined
+}
+
+/**
  * Checks if an error is retryable based on its type.
  * 
  * @param error - The error to check
  * @returns True if the error is retryable, false otherwise
  */
 export function isRetryableError(error: unknown): boolean {
-  if (error === null || error === undefined) {
+  if (!isErrorDefined(error)) {
     return false
   }
   
@@ -150,10 +160,10 @@ export function isRetryableError(error: unknown): boolean {
  * 
  * @param error - The error to get message from
  * @param context - Context string for the error
- * @returns A user-friendly error message
+ * @returns A user-friendly error message, or empty string if error is null/undefined
  */
 export function getUserFriendlyErrorMessage(error: unknown, context: string): string {
-  if (error === null || error === undefined) {
+  if (!isErrorDefined(error)) {
     return ""
   }
   

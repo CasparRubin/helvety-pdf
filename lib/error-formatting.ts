@@ -1,13 +1,43 @@
 /**
  * Error formatting utilities for consistent error messages across the application.
  * Provides standardized formatting for single and multiple errors.
+ * 
+ * Error message format standards:
+ * - Start with action/context (e.g., "Can't load", "Failed to process")
+ * - Include file/resource name in quotes when available (e.g., "filename.pdf")
+ * - Include IDs or numbers when relevant (e.g., "page 5", "fileId: abc123")
+ * - End with period for single errors
+ * - Use numbered list for multiple errors
+ * - Be concise but informative
  */
 
 /**
- * Formats a single error message.
+ * Standard error message templates for consistency.
+ */
+export const ERROR_TEMPLATES = {
+  /** Template: "Can't [action] '[filename]': [reason]" */
+  CANT_ACTION_FILE: (action: string, filename: string, reason: string): string => {
+    return `Can't ${action} '${filename}': ${reason}`
+  },
+  /** Template: "[Action] failed: [reason]" */
+  ACTION_FAILED: (action: string, reason: string): string => {
+    return `${action} failed: ${reason}`
+  },
+  /** Template: "[Resource] not found. [context]" */
+  NOT_FOUND: (resource: string, context?: string): string => {
+    return context ? `${resource} not found. ${context}` : `${resource} not found.`
+  },
+  /** Template: "Invalid [resource]: [details]" */
+  INVALID: (resource: string, details: string): string => {
+    return `Invalid ${resource}: ${details}`
+  },
+} as const
+
+/**
+ * Formats a single error message according to standards.
  * 
  * @param error - The error message
- * @returns Formatted error message
+ * @returns Formatted error message (trimmed)
  */
 export function formatSingleError(error: string): string {
   return error.trim()
@@ -17,10 +47,12 @@ export function formatSingleError(error: string): string {
  * Formats multiple error messages into a single formatted string.
  * Each error is numbered for clarity.
  * 
+ * Format: "Some files couldn't be added:\n1. Error 1\n2. Error 2..."
+ * 
  * @param errors - Array of error messages
- * @returns Formatted error message with numbered list
+ * @returns Formatted error message with numbered list, or single error if only one
  */
-export function formatMultipleErrors(errors: string[]): string {
+export function formatMultipleErrors(errors: ReadonlyArray<string>): string {
   if (errors.length === 0) {
     return ""
   }
@@ -29,7 +61,8 @@ export function formatMultipleErrors(errors: string[]): string {
     return formatSingleError(errors[0])
   }
   
-  return `Some files couldn't be added:\n${errors.map((err, idx) => `${idx + 1}. ${err}`).join('\n')}`
+  const formattedErrors = errors.map((err, idx) => `${idx + 1}. ${formatSingleError(err)}`).join('\n')
+  return `Some files couldn't be added:\n${formattedErrors}`
 }
 
 /**
@@ -38,7 +71,7 @@ export function formatMultipleErrors(errors: string[]): string {
  * @param errors - Array of error messages (can be empty)
  * @returns Formatted error message, or empty string if no errors
  */
-export function formatValidationErrors(errors: string[]): string {
+export function formatValidationErrors(errors: ReadonlyArray<string>): string {
   if (errors.length === 0) {
     return ""
   }

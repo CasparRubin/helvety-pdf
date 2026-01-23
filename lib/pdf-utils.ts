@@ -6,8 +6,6 @@
 // Internal utilities
 import { loadPdfFromFile } from "./pdf-loading"
 import { convertImageToPdf } from "./pdf-conversion"
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Import needed for re-export
-import { extractPageFromPdf } from "./pdf-extraction"
 
 // Types
 import type { PdfFile } from "./types"

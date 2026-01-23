@@ -2,16 +2,16 @@ import * as React from "react"
 import { QUALITY_UPGRADE } from "@/lib/constants"
 
 interface UseProgressiveQualityParams {
-  isVisible: boolean
-  shouldUnmount: boolean
-  fileType: 'pdf' | 'image'
+  readonly isVisible: boolean
+  readonly shouldUnmount: boolean
+  readonly fileType: 'pdf' | 'image'
 }
 
 interface UseProgressiveQualityReturn {
-  isHighQuality: boolean
-  setIsHighQuality: React.Dispatch<React.SetStateAction<boolean>>
-  qualityUpgradeTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
-  qualityUpgradeIdleCallbackRef: React.MutableRefObject<number | null>
+  readonly isHighQuality: boolean
+  readonly setIsHighQuality: React.Dispatch<React.SetStateAction<boolean>>
+  readonly qualityUpgradeTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
+  readonly qualityUpgradeIdleCallbackRef: React.MutableRefObject<number | null>
 }
 
 /**
