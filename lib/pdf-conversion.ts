@@ -3,8 +3,12 @@
  * Extracted from pdf-utils.ts for better code organization.
  */
 
+// External libraries
 import { PDFDocument } from "pdf-lib"
+
+// Internal utilities
 import { safeRevokeObjectURL } from "./blob-url-utils"
+import { ERROR_TEMPLATES } from "./error-formatting"
 
 /**
  * Represents an embedded image with its dimensions.
@@ -33,14 +37,12 @@ export async function convertImageToPdf(file: File): Promise<PDFDocument> {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await PDFDocument.create()
   
-  // Detect image format from MIME type or file extension
   const mimeType = file.type.toLowerCase()
   const fileName = file.name.toLowerCase()
   
   let imageEmbed: ImageEmbed | null = null
   
   try {
-    // Try PNG first
     if (mimeType === 'image/png' || fileName.endsWith('.png')) {
       const pngImage = await pdf.embedPng(arrayBuffer)
       imageEmbed = {
@@ -49,7 +51,6 @@ export async function convertImageToPdf(file: File): Promise<PDFDocument> {
         height: pngImage.height,
       }
     }
-    // Try JPEG
     else if (mimeType === 'image/jpeg' || mimeType === 'image/jpg' || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
       const jpgImage = await pdf.embedJpg(arrayBuffer)
       imageEmbed = {
@@ -58,14 +59,11 @@ export async function convertImageToPdf(file: File): Promise<PDFDocument> {
         height: jpgImage.height,
       }
     }
-    // For other formats (WebP, GIF, etc.), convert via Canvas
     else {
-      // Ensure we're in a browser environment
       if (typeof document === 'undefined' || typeof Image === 'undefined') {
         throw new Error('Image conversion requires a browser environment')
       }
       
-      // Create an image element to load and convert the image
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
         const image = new Image()
         const blob = new Blob([arrayBuffer], { type: file.type || 'image/png' })
@@ -77,28 +75,26 @@ export async function convertImageToPdf(file: File): Promise<PDFDocument> {
         }
         image.onerror = () => {
           safeRevokeObjectURL(url)
-          reject(new Error(`Failed to load image: ${file.name}`))
+          reject(new Error(ERROR_TEMPLATES.ACTION_FAILED('Load image', `'${file.name}' could not be loaded`)))
         }
         image.src = url
       })
       
-      // Convert image to PNG via Canvas
       const canvas = document.createElement('canvas')
       canvas.width = img.naturalWidth
       canvas.height = img.naturalHeight
       const ctx = canvas.getContext('2d')
       if (!ctx) {
-        throw new Error('Failed to get canvas context')
+        throw new Error(ERROR_TEMPLATES.ACTION_FAILED('Get canvas context', 'Canvas context is not available'))
       }
       ctx.drawImage(img, 0, 0)
       
-      // Convert canvas to blob, then to array buffer
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((blob: Blob | null) => {
           if (blob) {
             resolve(blob)
           } else {
-            reject(new Error('Failed to convert image to blob'))
+            reject(new Error(ERROR_TEMPLATES.ACTION_FAILED('Convert image to blob', 'Canvas conversion failed')))
           }
         }, 'image/png')
       })
@@ -112,9 +108,8 @@ export async function convertImageToPdf(file: File): Promise<PDFDocument> {
       }
     }
     
-    // Create a page with the image dimensions
     if (!imageEmbed) {
-      throw new Error('Failed to embed image: imageEmbed is null')
+      throw new Error(ERROR_TEMPLATES.ACTION_FAILED('Embed image', 'Image embedding failed: imageEmbed is null'))
     }
     
     const page = pdf.addPage([imageEmbed.width, imageEmbed.height])
@@ -127,6 +122,7 @@ export async function convertImageToPdf(file: File): Promise<PDFDocument> {
     
     return pdf
   } catch (error) {
-    throw new Error(`Failed to convert image to PDF: ${error instanceof Error ? error.message : String(error)}`)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    throw new Error(ERROR_TEMPLATES.ACTION_FAILED('Convert image to PDF', errorMessage))
   }
 }

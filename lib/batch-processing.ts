@@ -36,14 +36,15 @@
  * - Browser yields prevent UI blocking and maintain responsiveness
  */
 
-import { withTimeout } from "./timeout-utils"
+// Internal utilities
 import { TIMEOUTS } from "./constants"
+import { withTimeout } from "./timeout-utils"
 
 /**
  * Result of processing a single item in a batch.
  */
 export type BatchItemResult<T> = 
-  | { readonly success: true; readonly value: T }
+  | { readonly success: true; readonly value: T; readonly itemIndex: number }
   | { readonly success: false; readonly error: string; readonly itemIndex: number }
 
 /**
@@ -118,6 +119,124 @@ export function yieldToBrowser(timeout: number = 100): Promise<void> {
 }
 
 /**
+ * Extracts error message from an unknown error value.
+ * 
+ * @param error - The error to extract message from
+ * @returns A string error message
+ */
+function extractErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+/**
+ * Processes a single item in a batch and returns a result.
+ * 
+ * @param item - The item to process
+ * @param globalIndex - The global index of the item
+ * @param processor - Function to process the item
+ * @returns A batch item result (success or error)
+ * @template TItem - Type of item to process
+ * @template TResult - Type of result from processing
+ */
+async function processBatchItem<TItem, TResult>(
+  item: TItem,
+  globalIndex: number,
+  processor: (item: TItem, index: number) => Promise<TResult>
+): Promise<BatchItemResult<TResult>> {
+  try {
+    const value = await processor(item, globalIndex)
+    return { success: true as const, value, itemIndex: globalIndex }
+  } catch (error) {
+    return { success: false as const, error: extractErrorMessage(error), itemIndex: globalIndex }
+  }
+}
+
+/**
+ * Processes batch results from Promise.allSettled and adds them to results array.
+ * 
+ * @param batchResults - Results from Promise.allSettled
+ * @param batchStartIndex - Starting index of the batch
+ * @param batchLength - Length of the batch
+ * @param results - Array to add results to
+ * @template TResult - Type of result from processing
+ */
+function processBatchResults<TResult>(
+  batchResults: ReadonlyArray<PromiseSettledResult<BatchItemResult<TResult>>>,
+  batchStartIndex: number,
+  batchLength: number,
+  results: BatchItemResult<TResult>[]
+): void {
+  for (const result of batchResults) {
+    if (result.status === 'fulfilled') {
+      results.push(result.value)
+    } else {
+      const errorMessage = extractErrorMessage(result.reason)
+      // If the entire batch promise was rejected, mark all items in batch as failed
+      for (let j = 0; j < batchLength; j++) {
+        results.push({
+          success: false,
+          error: errorMessage,
+          itemIndex: batchStartIndex + j,
+        })
+      }
+    }
+  }
+}
+
+/**
+ * Checks if all items in a batch failed and throws if continueOnError is false.
+ * 
+ * @param results - All results processed so far
+ * @param batchStartIndex - Starting index of the batch
+ * @param batchLength - Length of the batch
+ * @param batchNumber - Current batch number (for error message)
+ * @param continueOnError - Whether to continue on error
+ * @throws {Error} If all items failed and continueOnError is false
+ * @template TResult - Type of result from processing
+ */
+function checkBatchFailure<TResult>(
+  results: ReadonlyArray<BatchItemResult<TResult>>,
+  batchStartIndex: number,
+  batchLength: number,
+  batchNumber: number,
+  continueOnError: boolean
+): void {
+  const batchErrors = results.filter((r): r is Extract<BatchItemResult<TResult>, { success: false }> => 
+    !r.success && r.itemIndex >= batchStartIndex && r.itemIndex < batchStartIndex + batchLength
+  )
+  
+  if (batchErrors.length === batchLength && !continueOnError) {
+    throw new Error(`All items in batch ${batchNumber} failed. First error: ${batchErrors[0]?.error ?? 'unknown'}`)
+  }
+}
+
+/**
+ * Handles batch processing errors by adding error results for failed items.
+ * 
+ * @param error - The error that occurred
+ * @param results - Array to add error results to
+ * @param batchStartIndex - Starting index of the batch
+ * @param batchLength - Length of the batch
+ * @template TResult - Type of result from processing
+ */
+function handleBatchError<TResult>(
+  error: unknown,
+  results: BatchItemResult<TResult>[],
+  batchStartIndex: number,
+  batchLength: number
+): void {
+  const errorMessage = extractErrorMessage(error)
+  // Add error results for all items in the batch that haven't been processed yet
+  for (let j = results.length; j < batchStartIndex + batchLength; j++) {
+    results.push({
+      success: false,
+      error: errorMessage,
+      itemIndex: j,
+    })
+  }
+}
+
+/**
  * Processes items in batches with timeout handling and error recovery.
  * 
  * Batch processing strategy:
@@ -137,11 +256,12 @@ export function yieldToBrowser(timeout: number = 100): Promise<void> {
  * 
  * @example
  * ```typescript
+ * import { logger } from "./logger"
  * const results = await processInBatches(
  *   pages,
  *   async (page) => await processPage(page),
  *   5,
- *   { continueOnError: true, onProgress: (p, t) => console.log(`${p}/${t}`) }
+ *   { continueOnError: true, onProgress: (p, t) => logger.log(`${p}/${t}`) }
  * )
  * ```
  */
@@ -166,79 +286,36 @@ export async function processInBatches<TItem, TResult>(
     const batchNumber = Math.floor(i / batchSize) + 1
     const batchStartIndex = i
 
-    // Calculate timeout for this batch (scales with batch size)
     const calculatedTimeout = batchTimeout ?? Math.min(
       TIMEOUTS.OPERATION_TIMEOUT * batch.length,
       TIMEOUTS.OPERATION_TIMEOUT * 3
     )
 
     try {
-      // Process batch with timeout
       const batchResults = await withTimeout(
         Promise.allSettled(
-          batch.map(async (item, batchIdx) => {
-            const globalIdx = batchStartIndex + batchIdx
-            try {
-              const value = await processor(item, globalIdx)
-              return { success: true as const, value, itemIndex: globalIdx }
-            } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : String(error)
-              return { success: false as const, error: errorMessage, itemIndex: globalIdx }
-            }
-          })
+          batch.map((item, batchIdx) => 
+            processBatchItem(item, batchStartIndex + batchIdx, processor)
+          )
         ),
         calculatedTimeout,
         `Batch ${batchNumber}/${totalBatches} timed out after ${calculatedTimeout}ms.`
       )
 
-      // Process results
-      for (const result of batchResults) {
-        if (result.status === 'fulfilled') {
-          results.push(result.value)
-        } else {
-          // Batch-level timeout
-          const errorMessage = result.reason instanceof Error ? result.reason.message : String(result.reason)
-          // Mark all items in batch as failed
-          for (let j = 0; j < batch.length; j++) {
-            results.push({
-              success: false,
-              error: errorMessage,
-              itemIndex: batchStartIndex + j,
-            })
-          }
-        }
-      }
+      processBatchResults(batchResults, batchStartIndex, batch.length, results)
+      checkBatchFailure(results, batchStartIndex, batch.length, batchNumber, continueOnError)
 
-      // Check if we should continue on errors
-      const batchErrors = results.filter((r): r is Extract<BatchItemResult<TResult>, { success: false }> => 
-        !r.success && r.itemIndex >= batchStartIndex && r.itemIndex < batchStartIndex + batch.length
-      )
-      if (batchErrors.length === batch.length && !continueOnError) {
-        throw new Error(`All items in batch ${batchNumber} failed. First error: ${batchErrors[0]?.error ?? 'unknown'}`)
-      }
-
-      // Progress callback
       if (onProgress) {
         onProgress(Math.min(i + batchSize, items.length), items.length, batchNumber, totalBatches)
       }
 
     } catch (err) {
-      // Batch-level error (timeout or all items failed)
       if (!continueOnError) {
         throw err
       }
-      // Mark remaining items in batch as failed
-      for (let j = results.length; j < batchStartIndex + batch.length; j++) {
-        const errorMessage = err instanceof Error ? err.message : String(err)
-        results.push({
-          success: false,
-          error: errorMessage,
-          itemIndex: j,
-        })
-      }
+      handleBatchError(err, results, batchStartIndex, batch.length)
     }
 
-    // Yield to browser between batches (except after last batch)
     if (i + batchSize < items.length) {
       await yieldToBrowser(yieldDelay)
     }

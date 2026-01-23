@@ -1,4 +1,7 @@
+// External libraries
 import { PDFPage, degrees } from "pdf-lib"
+
+// Internal utilities
 import { ROTATION_ANGLES } from "./constants"
 
 /**
@@ -37,19 +40,13 @@ export async function applyPageRotation(
     return
   }
 
-  // Normalize userRotation to ensure it's a valid rotation angle
   const normalizedUserRotation = normalizeRotation(userRotation)
 
-  // For images, when rotating 90 or 270 degrees, we need to swap page dimensions
   if (isImage && (normalizedUserRotation === ROTATION_ANGLES.QUARTER || normalizedUserRotation === ROTATION_ANGLES.THREE_QUARTER)) {
     const { width, height } = targetPage.getSize()
-    // Swap dimensions for 90/270 degree rotations
     targetPage.setSize(height, width)
   }
   
-  // Apply the rotation directly (userRotation from state is the absolute total rotation)
-  // This fixes the bug where rapid clicks caused incorrect rotation by treating userRotation as relative
-  // The old code incorrectly added originalRotation + userRotation, but userRotation is already absolute
   targetPage.setRotation(degrees(normalizedUserRotation))
 }
 

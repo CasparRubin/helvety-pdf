@@ -32,9 +32,19 @@ export function withTimeout<T>(
   errorMessage: string = "Operation timed out"
 ): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
+  let isCleanedUp = false
+  
+  const cleanup = (): void => {
+    if (!isCleanedUp && timeoutId !== null) {
+      clearTimeout(timeoutId)
+      timeoutId = null
+      isCleanedUp = true
+    }
+  }
   
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
+      cleanup()
       reject(new Error(errorMessage))
     }, timeoutMs)
   })
@@ -42,19 +52,11 @@ export function withTimeout<T>(
   return Promise.race<T>([
     promise.then(
       (value) => {
-        // Clean up timeout if promise resolves first
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId)
-          timeoutId = null
-        }
+        cleanup()
         return value
       },
       (error) => {
-        // Clean up timeout if promise rejects first
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId)
-          timeoutId = null
-        }
+        cleanup()
         throw error
       }
     ),

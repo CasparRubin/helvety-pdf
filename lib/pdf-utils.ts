@@ -3,11 +3,8 @@
  * Re-exports functions from specialized modules for backward compatibility.
  */
 
-// Internal utilities
 import { loadPdfFromFile } from "./pdf-loading"
 import { convertImageToPdf } from "./pdf-conversion"
-
-// Types
 import type { PdfFile } from "./types"
 
 /**
@@ -46,12 +43,10 @@ export async function loadFileWithPreview(
   let blob: Blob
 
   if (isPdf) {
-    // Handle PDF files
     blob = new Blob([file], { type: "application/pdf" })
     pdf = await loadPdfFromFile(file)
     fileType = 'pdf'
   } else {
-    // Handle image files - convert to PDF
     blob = new Blob([file], { type: file.type })
     pdf = await convertImageToPdf(file)
     fileType = 'image'

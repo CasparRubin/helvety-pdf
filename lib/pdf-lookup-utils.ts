@@ -15,10 +15,11 @@ import type { PdfFile, UnifiedPage } from "./types"
  * 
  * @example
  * ```typescript
+ * import { logger } from "./logger"
  * const pageMap = createPageMap(unifiedPages)
  * const page = pageMap.get(5) // O(1) lookup instead of O(n) Array.find()
  * if (page) {
- *   console.log(`Page 5 is from file ${page.fileId}`)
+ *   logger.log(`Page 5 is from file ${page.fileId}`)
  * }
  * ```
  */
@@ -39,10 +40,11 @@ export function createPageMap(unifiedPages: ReadonlyArray<UnifiedPage>): Map<num
  * 
  * @example
  * ```typescript
+ * import { logger } from "./logger"
  * const fileMap = createFileMap(pdfFiles)
  * const file = fileMap.get('file-123') // O(1) lookup
  * if (file) {
- *   console.log(`File: ${file.file.name}, Pages: ${file.pageCount}`)
+ *   logger.log(`File: ${file.file.name}, Pages: ${file.pageCount}`)
  * }
  * ```
  */

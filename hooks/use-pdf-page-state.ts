@@ -49,7 +49,8 @@ export function usePdfPageState(pageOrder: ReadonlyArray<number>): UsePdfPageSta
   }, [pageOrder, deletedPages])
 
   const rotatedCount = React.useMemo(() => {
-    return Object.keys(pageRotations).filter((k: string) => pageRotations[Number(k)] !== 0).length
+    // Use Object.values for better performance - avoids string-to-number conversion
+    return Object.values(pageRotations).filter((rotation) => rotation !== 0).length
   }, [pageRotations])
 
   // Page deletion toggle with validation

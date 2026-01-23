@@ -1,3 +1,4 @@
+// Internal utilities
 import { FILENAME_LIMITS } from "./constants"
 
 /**
@@ -8,21 +9,18 @@ import { FILENAME_LIMITS } from "./constants"
  * @returns A sanitized filename safe for use in downloads
  */
 function sanitizeFilename(filename: string): string {
-  // Remove path separators and dangerous characters
   let sanitized = filename
-    .replace(/[/\\?%*:|"<>]/g, '') // Remove path separators and invalid chars
-    .replace(/\0/g, '') // Remove null bytes
-    .replace(/[\x00-\x1f\x7f-\x9f]/g, '') // Remove control characters
+    .replace(/[/\\?%*:|"<>]/g, '')
+    .replace(/\0/g, '')
+    .replace(/[\x00-\x1f\x7f-\x9f]/g, '')
     .trim()
   
-  // Limit filename length (Windows has 255 char limit, be conservative)
   if (sanitized.length > FILENAME_LIMITS.MAX_LENGTH) {
     const ext = sanitized.substring(sanitized.lastIndexOf('.'))
     const name = sanitized.substring(0, sanitized.lastIndexOf('.'))
     sanitized = name.substring(0, FILENAME_LIMITS.MAX_LENGTH - ext.length) + ext
   }
   
-  // Ensure filename is not empty
   if (!sanitized || sanitized === '.' || sanitized === '..') {
     sanitized = FILENAME_LIMITS.DEFAULT_NAME
   }

@@ -3,6 +3,7 @@ import { BREAKPOINTS, COLUMNS, STORAGE_KEYS } from "@/lib/constants"
 
 /**
  * Gets the default column count based on screen size.
+ * Extracted outside the hook since it doesn't need closure access.
  * 
  * @returns The default number of columns for the current screen width
  */
@@ -30,6 +31,9 @@ export function useColumns(): [number | undefined, (columns: number) => void] {
   /**
    * Calculates the appropriate column count based on screen size and localStorage.
    * Extracted to eliminate duplication between initialization and resize handlers.
+   * 
+   * Note: This callback has no dependencies (empty array), making it stable across renders.
+   * Including it in dependency arrays is safe and correct - it will never change.
    */
   const calculateColumns = React.useCallback((): number => {
     if (typeof window === "undefined") return COLUMNS.DEFAULT_MEDIUM

@@ -3,8 +3,11 @@
  * Extracted from hooks to improve code organization and reusability.
  */
 
+// Internal utilities
 import { FILE_LIMITS } from "./constants"
 import { validateFileType, validateFileSize, isPdfFile } from "./file-validation"
+
+// Types
 import type { PdfFile } from "./types"
 
 /**
@@ -32,7 +35,6 @@ export function validateFiles(
 ): FileValidationResult {
   const errors: string[] = []
   
-  // Check total file count limit
   const currentFileCount = existingFiles.length
   const newFileCount = files.length
   if (currentFileCount + newFileCount > FILE_LIMITS.MAX_FILES) {
@@ -42,23 +44,19 @@ export function validateFiles(
     return { valid: false, errors }
   }
 
-  // Validate each file
   for (const file of files) {
-    // Validate file type
     const typeValidation = validateFileType(file)
     if (!typeValidation.valid) {
       errors.push(typeValidation.error || `'${file.name}' is not a supported file type.`)
       continue
     }
 
-    // Validate file size
     const sizeValidation = validateFileSize(file)
     if (!sizeValidation.valid) {
       errors.push(sizeValidation.error || `'${file.name}' has an invalid file size.`)
       continue
     }
 
-    // Check for duplicates
     if (isDuplicateFile(file, existingFiles)) {
       errors.push(`'${file.name}' is already added.`)
       continue

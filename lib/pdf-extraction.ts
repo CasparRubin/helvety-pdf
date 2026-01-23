@@ -3,6 +3,7 @@
  * Extracted from pdf-utils.ts for better code organization.
  */
 
+// External libraries
 import { PDFDocument } from "pdf-lib"
 
 /**

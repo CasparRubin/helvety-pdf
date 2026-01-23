@@ -1,3 +1,6 @@
+// Internal utilities
+import { ERROR_LIMITS } from "./constants"
+
 /**
  * Error types for better error categorization
  */
@@ -20,8 +23,6 @@ export interface PdfErrorInfo {
   retryable: boolean
 }
 
-import { ERROR_LIMITS } from "./constants"
-
 /**
  * Sanitizes error messages to prevent XSS and remove sensitive information.
  * Removes HTML tags, script content, and limits message length.
@@ -30,14 +31,12 @@ import { ERROR_LIMITS } from "./constants"
  * @returns A sanitized error message safe for display
  */
 function sanitizeErrorMessage(message: string): string {
-  // Remove HTML tags and script content
   let sanitized = message
-    .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/javascript:/gi, '') // Remove javascript: protocol
-    .replace(/on\w+\s*=/gi, '') // Remove event handlers
+    .replace(/<[^>]*>/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
     .trim()
   
-  // Limit message length to prevent UI issues
   if (sanitized.length > ERROR_LIMITS.MAX_MESSAGE_LENGTH) {
     sanitized = sanitized.substring(0, ERROR_LIMITS.MAX_MESSAGE_LENGTH - ERROR_LIMITS.TRUNCATE_SUFFIX_LENGTH) + '...'
   }
@@ -87,7 +86,6 @@ export function formatPdfError(error: unknown, context: string): string {
   const sanitizedErrorMessage = sanitizeErrorMessage(rawErrorMessage)
   const errorType = detectErrorType(sanitizedErrorMessage)
   
-  // Sanitize context as well
   const sanitizedContext = sanitizeErrorMessage(context)
   let userMessage = sanitizedContext
   

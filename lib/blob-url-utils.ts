@@ -21,7 +21,6 @@ export function safeRevokeObjectURL(url: string | null | undefined): void {
       URL.revokeObjectURL(url)
     } catch {
       // Silently handle errors (URL might already be revoked)
-      // In development, we could log this, but in production we want to fail silently
     }
   }
 }

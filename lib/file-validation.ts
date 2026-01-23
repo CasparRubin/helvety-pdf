@@ -4,6 +4,7 @@
  * Uses magic number checks for additional security.
  */
 
+// Internal utilities
 import { FILE_LIMITS } from "./constants"
 
 /**

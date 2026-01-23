@@ -3,8 +3,9 @@
  * Provides standardized error handling patterns and error transformation.
  */
 
-import { createPdfErrorInfo, type PdfErrorInfo } from "./pdf-errors"
+// Internal utilities
 import { logger } from "./logger"
+import { createPdfErrorInfo, type PdfErrorInfo } from "./pdf-errors"
 
 /**
  * Error handler callback type for setting errors in components.
@@ -122,21 +123,30 @@ export async function withErrorHandling<T>(
   onError: ErrorSetter
 ): Promise<T> {
   try {
-    onError(null) // Clear any previous errors
+    onError(null)
     return await fn()
   } catch (error) {
     handleError(error, context, onError)
-    throw error // Re-throw to allow caller to handle if needed
+    throw error
   }
 }
 
 /**
  * Type guard to check if an error is not null or undefined.
+ * Provides a more specific type than the generic NonNullable check.
  * 
- * @param error - The error to check
- * @returns True if error is not null or undefined
+ * @param error - The error to check (can be Error, string, or unknown)
+ * @returns True if error is not null or undefined, narrowing the type to Error | string | object
+ * 
+ * @example
+ * ```typescript
+ * if (isErrorDefined(error)) {
+ *   // error is now typed as Error | string | object (not null/undefined)
+ *   const message = error instanceof Error ? error.message : String(error)
+ * }
+ * ```
  */
-function isErrorDefined(error: unknown): error is NonNullable<unknown> {
+function isErrorDefined(error: unknown): error is Error | string | object {
   return error !== null && error !== undefined
 }
 

@@ -3,15 +3,20 @@
  * Extracted from hooks to improve code organization and reusability.
  */
 
+// External libraries
 import { PDFDocument } from "pdf-lib"
-import { getPdfColor } from "./pdf-colors"
-import { createPdfErrorInfo, PdfErrorType } from "./pdf-errors"
-import { loadFileWithPreview } from "./pdf-utils"
-// Note: loadFileWithPreview is still in pdf-utils.ts as it uses both loading and conversion
-import { determineFileType } from "./validation-utils"
+
+// Internal utilities
 import { safeRevokeObjectURL } from "./blob-url-utils"
-import { logger } from "./logger"
 import { CACHE_LIMITS } from "./constants"
+import { createPdfErrorInfo, PdfErrorType } from "./pdf-errors"
+import { getPdfColor } from "./pdf-colors"
+import { loadFileWithPreview } from "./pdf-utils"
+import { determineFileType } from "./validation-utils"
+import { logger } from "./logger"
+import { ERROR_TEMPLATES } from "./error-formatting"
+
+// Types
 import type { PdfFile } from "./types"
 
 /**
@@ -40,7 +45,6 @@ import type { PdfFile } from "./types"
  */
 function evictLRUEntry(cache: Map<string, PDFDocument>, maxSize: number): string | undefined {
   if (cache.size >= maxSize) {
-    // Evict least recently used (first entry in Map, which is oldest)
     const firstKey = cache.keys().next().value
     if (firstKey) {
       cache.delete(firstKey)
@@ -49,25 +53,6 @@ function evictLRUEntry(cache: Map<string, PDFDocument>, maxSize: number): string
     }
   }
   return undefined
-}
-
-/**
- * Updates access order for LRU cache by moving accessed item to end.
- * This makes the item "most recently used" so it won't be evicted soon.
- * 
- * Note: This function is currently unused but kept for potential future use.
- * Access order is currently updated in the hook's getCachedPdf function.
- * 
- * @param cache - The PDF cache map
- * @param key - The key that was accessed
- * @param value - The value to move to end (most recently used position)
- */
-function updateLRUAccess(cache: Map<string, PDFDocument>, key: string, value: PDFDocument): void {
-  // Move to end (most recently used) by deleting and re-adding
-  if (cache.has(key)) {
-    cache.delete(key)
-    cache.set(key, value)
-  }
 }
 
 /**
@@ -103,11 +88,12 @@ export function generateFileId(): string {
  * 
  * @example
  * ```typescript
+ * import { logger } from "./logger"
  * const result = await processFile(file, 0, pdfCache)
  * if ('error' in result) {
- *   console.error('Processing failed:', result.error)
+ *   logger.error('Processing failed:', result.error)
  * } else {
- *   console.log('File processed:', result.pdfFile.id)
+ *   logger.log('File processed:', result.pdfFile.id)
  * }
  * ```
  * 
@@ -127,59 +113,47 @@ export async function processFile(
   fileIndex: number,
   pdfCache: Map<string, PDFDocument>
 ): Promise<ProcessFileResult> {
-  // Determine file type
   const isPdf = determineFileType(file) === 'pdf'
   let url: string | null = null
 
   try {
-    // Load file and create preview URL
     const { pdf, url: previewUrl, fileType } = await loadFileWithPreview(file, isPdf)
     url = previewUrl
 
     if (!url) {
-      return { error: `'${file.name}' failed to create preview URL.` }
+      return { error: ERROR_TEMPLATES.ACTION_FAILED('Create preview URL', `'${file.name}' could not create a preview URL`) }
     }
 
-    const count: number = pdf.getPageCount()
+    const count = pdf.getPageCount()
 
     if (count === 0) {
       safeRevokeObjectURL(url)
       return { error: `'${file.name}' has no pages.` }
     }
 
-    // Generate fileId and manage cache using LRU eviction strategy
-    const fileId: string = generateFileId()
-    
-    // Evict least recently used entry if cache is full (LRU strategy)
+    const fileId = generateFileId()
     evictLRUEntry(pdfCache, CACHE_LIMITS.MAX_CACHED_PDFS)
-    
-    // Cache the PDF (for images, this is the converted PDF)
-    // New entries are added at the end (most recently used position)
     pdfCache.set(fileId, pdf)
     logger.log(`Cached PDF for ${fileType} file: "${file.name}" (ID: ${fileId}, cache size: ${pdfCache.size}/${CACHE_LIMITS.MAX_CACHED_PDFS})`)
 
-    // Assign color based on file index
-    const color: string = getPdfColor(fileIndex)
+    const color = getPdfColor(fileIndex)
 
     const pdfFile: PdfFile = {
       id: fileId,
       file,
-      url: url, // url is guaranteed to be set at this point
+      url: url,
       pageCount: count,
       color,
       type: fileType,
     }
 
-    // Clear url reference since it's now owned by the PdfFile object
     url = null
 
     return { pdfFile }
   } catch (err) {
-    // Ensure blob URL is cleaned up on error
     safeRevokeObjectURL(url)
     
     const errorInfo = createPdfErrorInfo(err, `Can't load '${file.name}':`)
-    // Log structured error for debugging
     if (errorInfo.type === PdfErrorType.CORRUPTED || errorInfo.type === PdfErrorType.INVALID_FORMAT) {
       logger.error('File validation error:', errorInfo)
     }
