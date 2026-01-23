@@ -156,6 +156,23 @@ export function Navbar() {
               </ul>
             </div>
             <div className="flex flex-col gap-3 pt-3 border-t">
+              <div className="flex items-center gap-3 text-sm">
+                <Link
+                  href="/terms"
+                  className="text-primary hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Terms
+                </Link>
+                <span className="text-muted-foreground">•</span>
+                <Link
+                  href="/privacy"
+                  className="text-primary hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Privacy Policy
+                </Link>
+              </div>
               <div className="flex items-start gap-2">
                 <Checkbox
                   id="acknowledge-terms"
@@ -167,22 +184,7 @@ export function Navbar() {
                   htmlFor="acknowledge-terms"
                   className="text-sm font-normal cursor-pointer flex-1"
                 >
-                  I have read and understood the{" "}
-                  <Link
-                    href="/terms"
-                    className="text-primary hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Terms
-                  </Link>
-                  {" and "}
-                  <Link
-                    href="/privacy"
-                    className="text-primary hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Privacy Policy
-                  </Link>
+                  I have read and understood the Terms and Privacy Policy
                 </Label>
               </div>
               <div className="flex justify-end">
