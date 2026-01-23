@@ -151,51 +151,45 @@ export function Navbar() {
             <div className="text-sm text-muted-foreground">
               <ul className="list-disc pl-5 space-y-1">
                 <li>All processing happens in your browser</li>
-                <li>Merge, rotate, and organize PDFs</li>
                 <li>Performance depends on your device</li>
                 <li>Large datasets or filesizes might crash the app</li>
               </ul>
             </div>
-            <div className="flex flex-col gap-4 pt-4 border-t">
-              <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-                <div className="flex items-center gap-3 text-sm">
+            <div className="flex flex-col gap-3 pt-3 border-t">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="acknowledge-terms"
+                  checked={hasAcknowledged}
+                  onCheckedChange={(checked) => setHasAcknowledged(checked === true)}
+                  className="mt-0.5"
+                />
+                <Label
+                  htmlFor="acknowledge-terms"
+                  className="text-sm font-normal cursor-pointer flex-1"
+                >
+                  I have read and understood the{" "}
                   <Link
                     href="/terms"
-                    className="text-primary hover:text-primary/80 font-medium transition-colors underline-offset-4 hover:underline"
+                    className="text-primary hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    Terms of Service
+                    Terms
                   </Link>
-                  <span className="text-muted-foreground">•</span>
+                  {" and "}
                   <Link
                     href="/privacy"
-                    className="text-primary hover:text-primary/80 font-medium transition-colors underline-offset-4 hover:underline"
+                    className="text-primary hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     Privacy Policy
                   </Link>
-                </div>
-                <div className="flex items-start gap-3 pt-2">
-                  <Checkbox
-                    id="acknowledge-terms"
-                    checked={hasAcknowledged}
-                    onCheckedChange={(checked) => setHasAcknowledged(checked === true)}
-                    className="mt-0.5"
-                  />
-                  <Label
-                    htmlFor="acknowledge-terms"
-                    className="text-sm font-normal cursor-pointer leading-relaxed flex-1"
-                  >
-                    I have read and understood the Terms of Service and Privacy Policy
-                  </Label>
-                </div>
+                </Label>
               </div>
               <div className="flex justify-end">
                 <Button 
                   variant="default"
                   onClick={() => setIsAboutOpen(false)}
                   disabled={!hasAcknowledged}
-                  className="min-w-[120px]"
                 >
                   Access App
                 </Button>
