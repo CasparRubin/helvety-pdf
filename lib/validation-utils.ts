@@ -47,7 +47,7 @@ export function validateFiles(
   for (const file of files) {
     const typeValidation = validateFileType(file)
     if (!typeValidation.valid) {
-      errors.push(typeValidation.error || `'${file.name}' is not a supported file type.`)
+      errors.push(typeValidation.error ?? `'${file.name}' is not a supported file type.`)
       continue
     }
 

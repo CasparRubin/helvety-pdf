@@ -34,7 +34,7 @@ export function Navbar(): React.JSX.Element {
   const pathname = usePathname()
   const [isAboutOpen, setIsAboutOpen] = React.useState(true)
   const [hasAcknowledged, setHasAcknowledged] = React.useState(false)
-  const versionString = process.env.NEXT_PUBLIC_BUILD_VERSION || "v.0.000000.0000 - Experimental"
+  const versionString = process.env.NEXT_PUBLIC_BUILD_VERSION ?? "v.0.000000.0000 - Experimental"
 
   // Only show dialog on main page, not on terms/privacy pages
   const shouldShowDialog = pathname === "/"

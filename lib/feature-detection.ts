@@ -42,8 +42,8 @@ export function isWebGLSupported(): boolean {
   try {
     const canvas = document.createElement('canvas')
     return !!(
-      canvas.getContext('webgl') || 
-      canvas.getContext('experimental-webgl') ||
+      canvas.getContext('webgl') ?? 
+      canvas.getContext('experimental-webgl') ??
       canvas.getContext('webgl2')
     )
   } catch {
@@ -138,24 +138,5 @@ export function getRenderingCapabilities(): RenderingCapabilities {
   }
 }
 
-/**
- * Gets a human-readable description of available rendering capabilities.
- * Useful for debugging and logging.
- * 
- * @returns String describing available features
- */
-export function getRenderingCapabilitiesDescription(): string {
-  const caps = getRenderingCapabilities()
-  const features: string[] = []
-  
-  if (caps.offscreenCanvas) features.push('OffscreenCanvas')
-  if (caps.imageBitmap) features.push('ImageBitmap')
-  if (caps.createImageBitmap) features.push('createImageBitmap')
-  if (caps.webgl2) features.push('WebGL2')
-  else if (caps.webgl) features.push('WebGL')
-  if (caps.transferControlToOffscreen) features.push('transferControlToOffscreen')
-  
-  return features.length > 0 
-    ? `Available: ${features.join(', ')}`
-    : 'No advanced rendering features available (falling back to canvas)'
-}
+// NOTE: getRenderingCapabilitiesDescription was removed as it was unused.
+// For debugging, use getRenderingCapabilities() directly and log the result.

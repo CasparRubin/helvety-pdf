@@ -25,27 +25,5 @@ export function safeRevokeObjectURL(url: string | null | undefined): void {
   }
 }
 
-/**
- * Creates a blob URL and returns a cleanup function.
- * Useful for ensuring URLs are cleaned up even if errors occur.
- * 
- * @param blob - The blob to create a URL for
- * @returns Object with the URL and a cleanup function
- * 
- * @example
- * ```typescript
- * const { url, cleanup } = createBlobURLWithCleanup(blob)
- * try {
- *   // Use url
- * } finally {
- *   cleanup()
- * }
- * ```
- */
-export function createBlobURLWithCleanup(blob: Blob): { url: string; cleanup: () => void } {
-  const url = URL.createObjectURL(blob)
-  return {
-    url,
-    cleanup: () => safeRevokeObjectURL(url),
-  }
-}
+// NOTE: createBlobURLWithCleanup was removed as it was unused.
+// The downloadBlob function in file-download.ts handles URL lifecycle internally.

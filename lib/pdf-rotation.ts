@@ -1,5 +1,6 @@
 // External libraries
-import { PDFPage, degrees } from "pdf-lib"
+import type { PDFPage } from "pdf-lib"
+import { degrees } from "pdf-lib"
 
 // Internal utilities
 import { ROTATION_ANGLES } from "./constants"

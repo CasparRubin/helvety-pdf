@@ -69,7 +69,7 @@ export function getMemoryInfo(): MemoryInfo | null {
  */
 export function getMemoryUsagePercent(): number | null {
   const memory = getMemoryInfo()
-  if (!memory || !memory.jsHeapSizeLimit || !memory.usedJSHeapSize) {
+  if (!memory?.jsHeapSizeLimit || !memory.usedJSHeapSize) {
     return null
   }
 
@@ -98,7 +98,7 @@ export function isMemoryPressureHigh(threshold: number = 80): boolean | null {
  */
 export function getAvailableMemory(): number | null {
   const memory = getMemoryInfo()
-  if (!memory || !memory.jsHeapSizeLimit || !memory.usedJSHeapSize) {
+  if (!memory?.jsHeapSizeLimit || !memory.usedJSHeapSize) {
     return null
   }
 
@@ -145,7 +145,7 @@ export function getRecommendedCacheLimit(
 
   // Adjust based on memory pressure if available
   const memory = getMemoryInfo()
-  if (memory && memory.jsHeapSizeLimit) {
+  if (memory?.jsHeapSizeLimit) {
     const usage = getMemoryUsagePercent()
     if (usage !== null) {
       // Reduce cache limit if memory usage is high

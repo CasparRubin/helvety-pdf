@@ -33,14 +33,14 @@ function PdfActionButtonsComponent({ actions, showGrip = false, className }: Pdf
     <TooltipProvider>
       <div className={cn("flex flex-col items-center gap-1.5", className)}>
         {actions.map((action, index) => {
-          const displayTitle = action.title || action.ariaLabel
-          const displayDescription = action.description || displayTitle
+          const displayTitle = action.title ?? action.ariaLabel
+          const displayDescription = action.description ?? displayTitle
           
           return (
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 <Button
-                  variant={action.variant || "secondary"}
+                  variant={action.variant ?? "secondary"}
                   size="icon"
                   className={cn(
                     "h-9 w-9 border border-border shadow-sm transition-all",

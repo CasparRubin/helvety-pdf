@@ -174,7 +174,13 @@ class ImageBitmapCache {
    * 
    * @returns Cache statistics object
    */
-  getStats() {
+  getStats(): {
+    size: number
+    maxSize: number
+    memoryBytes: number
+    maxMemoryBytes: number
+    memoryUsagePercent: number
+  } {
     return {
       size: this.cache.size,
       maxSize: this.maxSize,
@@ -209,9 +215,7 @@ export function getImageBitmapCache(
   maxSize: number = 50,
   maxMemoryBytes: number = 200 * 1024 * 1024
 ): ImageBitmapCache {
-  if (!cacheInstance) {
-    cacheInstance = new ImageBitmapCache(maxSize, maxMemoryBytes)
-  }
+  cacheInstance ??= new ImageBitmapCache(maxSize, maxMemoryBytes)
   return cacheInstance
 }
 
@@ -236,11 +240,5 @@ export function generateCacheKey(
   return `${fileUrl}:${pageNumber}:${width}:${devicePixelRatio}:${rotation}`
 }
 
-/**
- * Cleans up ImageBitmap cache (useful for memory management).
- */
-export function cleanupImageBitmapCache(): void {
-  if (cacheInstance) {
-    cacheInstance.clear()
-  }
-}
+// NOTE: cleanupImageBitmapCache was removed as it was unused.
+// Use getImageBitmapCache().clear() directly if cache cleanup is needed.

@@ -2,7 +2,7 @@
 import * as React from "react"
 
 // External libraries
-import { PDFDocument } from "pdf-lib"
+import type { PDFDocument } from "pdf-lib"
 
 // Internal utilities
 import { convertImageToPdf } from "@/lib/pdf-conversion"
@@ -31,6 +31,102 @@ interface UsePdfFilesReturn {
   readonly removeFile: (fileId: string) => void
   readonly clearAll: () => void
   readonly getCachedPdf: (fileId: string, file: File, fileType: 'pdf' | 'image') => Promise<PDFDocument>
+}
+
+/** Maximum number of retry attempts for transient failures */
+const MAX_RETRIES = 2
+
+/**
+ * Applies rate limiting between uploads.
+ * Returns after enforcing minimum delay between uploads.
+ * 
+ * @param lastUploadTimeRef - Ref to track last upload timestamp
+ */
+async function enforceRateLimiting(lastUploadTimeRef: React.MutableRefObject<number>): Promise<void> {
+  const now = Date.now()
+  const timeSinceLastUpload = now - lastUploadTimeRef.current
+  if (timeSinceLastUpload < FILE_LIMITS.UPLOAD_RATE_LIMIT) {
+    const delay = FILE_LIMITS.UPLOAD_RATE_LIMIT - timeSinceLastUpload
+    await new Promise<void>((resolve: () => void) => setTimeout(resolve, delay))
+  }
+  lastUploadTimeRef.current = Date.now()
+}
+
+/**
+ * Determines if an error is retryable based on its type.
+ * Network, timeout, and unknown errors are retryable.
+ * Corrupted or invalid file errors are not.
+ * 
+ * @param error - The error string to check
+ * @param fileName - The file name for error context
+ * @returns True if the error is retryable
+ */
+function isRetryableError(error: string, fileName: string): boolean {
+  const errorInfo = createPdfErrorInfo(new Error(error), `Processing '${fileName}':`)
+  return (
+    errorInfo.type === PdfErrorType.NETWORK ||
+    errorInfo.type === PdfErrorType.TIMEOUT ||
+    errorInfo.type === PdfErrorType.UNKNOWN
+  )
+}
+
+/**
+ * Enhances error messages with helpful suggestions for memory-related issues.
+ * 
+ * @param errorMessage - The original error message
+ * @returns Enhanced error message with suggestions if applicable
+ */
+function enhanceErrorMessage(errorMessage: string): string {
+  const isMemoryRelated =
+    errorMessage.includes('memory') ||
+    errorMessage.includes('allocation') ||
+    errorMessage.includes('out of memory') ||
+    errorMessage.toLowerCase().includes('quota')
+
+  if (isMemoryRelated) {
+    return `${errorMessage} The file may be too large for your device's available memory. Try closing other browser tabs or processing fewer files at once.`
+  }
+  return errorMessage
+}
+
+/**
+ * Processes a single file with retry logic for transient failures.
+ * 
+ * @param file - The file to process
+ * @param fileIndex - Index for color assignment
+ * @param pdfCache - Cache map for PDFDocuments
+ * @param isMobile - Whether device is mobile (affects yielding)
+ * @returns Processed PdfFile or error message
+ */
+async function processFileWithRetry(
+  file: File,
+  fileIndex: number,
+  pdfCache: Map<string, PDFDocument>,
+  isMobile: boolean
+): Promise<{ pdfFile: PdfFile } | { error: string }> {
+  let result = await processFile(file, fileIndex, pdfCache, isMobile)
+  let retryCount = 0
+
+  while ('error' in result && retryCount < MAX_RETRIES) {
+    if (!isRetryableError(result.error, file.name)) {
+      break // Don't retry for corrupted/invalid files
+    }
+
+    retryCount++
+    logger.log(`Retrying file '${file.name}' (attempt ${retryCount + 1}/${MAX_RETRIES + 1})...`)
+
+    // Yield before retry to give browser time to recover
+    await yieldToBrowserIfNeeded(file.size, isMobile, true)
+
+    result = await processFile(file, fileIndex, pdfCache, isMobile)
+  }
+
+  if ('error' in result) {
+    logger.error(`Failed to process file '${file.name}' after ${retryCount + 1} attempt(s):`, result.error)
+    return { error: enhanceErrorMessage(result.error) }
+  }
+
+  return result
 }
 
 
@@ -152,119 +248,68 @@ export function usePdfFiles(): UsePdfFilesReturn {
   /**
    * Validates and adds PDF files and images to the application state.
    * 
-   * Performs validation checks:
-   * - Verifies file type is PDF or image
-   * - Checks total file count against maximum limit
-   * - Checks for duplicate files (by name and size)
-   * - Validates PDF can be loaded and has pages, or image can be converted to PDF
-   * - Enforces rate limiting between uploads
-   * 
-   * Progressive processing:
-   * - Processes files one at a time with browser yielding between files
-   * - Yields more frequently on mobile devices and for large files
-   * - Implements retry logic for transient failures (up to 2 retries)
-   * - Continues processing remaining files even if some fail
-   * 
-   * Creates blob URLs for preview and assigns colors to files.
-   * Images are converted to single-page PDFs on upload and cached for performance.
+   * Performs validation checks, rate limiting, and progressive processing
+   * with retry logic for transient failures.
    * 
    * @param files - FileList or array of File objects to validate and add
    * @param onError - Callback function to handle errors
    */
-  const validateAndAddFiles = React.useCallback(async (files: FileList | ReadonlyArray<File>, onError: (error: string | null) => void): Promise<void> => {
+  const validateAndAddFiles = React.useCallback(async (
+    files: FileList | ReadonlyArray<File>,
+    onError: (error: string | null) => void
+  ): Promise<void> => {
     const fileArray = Array.from(files)
-    const pdfFilesToAdd: PdfFile[] = []
     const isMobile = isMobileDevice()
-
-    // Rate limiting: enforce minimum delay between uploads
-    const now = Date.now()
-    const timeSinceLastUpload = now - lastUploadTimeRef.current
-    if (timeSinceLastUpload < FILE_LIMITS.UPLOAD_RATE_LIMIT) {
-      const delay = FILE_LIMITS.UPLOAD_RATE_LIMIT - timeSinceLastUpload
-      await new Promise<void>((resolve: () => void) => setTimeout(resolve, delay))
-    }
-    lastUploadTimeRef.current = Date.now()
-
-    // Validate files using extracted utility
-    // Use ref to get current pdfFiles without creating dependency
     const currentPdfFiles = pdfFilesRef.current
+
+    // Enforce rate limiting between uploads
+    await enforceRateLimiting(lastUploadTimeRef)
+
+    // Validate files before processing
     const validationResult = validateFiles(fileArray, currentPdfFiles)
     if (!validationResult.valid) {
-      const errorMessage = formatValidationErrors(validationResult.errors)
-      onError(errorMessage)
+      onError(formatValidationErrors(validationResult.errors))
       return
     }
 
+    // Process all files and collect results
+    const pdfFilesToAdd: PdfFile[] = []
     const validationErrors: string[] = []
-    const MAX_RETRIES = 2
-    
-    // Process each file progressively with yielding and retry logic
+
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i]
       const fileIndex = currentPdfFiles.length + pdfFilesToAdd.length
-      
-      // Yield to browser before processing (especially important for large files and mobile)
-      await yieldToBrowserIfNeeded(file.size, isMobile, i > 0) // Always yield after first file
-      
-      let result = await processFile(file, fileIndex, pdfCacheRef.current, isMobile)
-      let retryCount = 0
-      
-      // Retry logic for transient failures
-      while ('error' in result && retryCount < MAX_RETRIES) {
-        const errorInfo = createPdfErrorInfo(new Error(result.error), `Processing '${file.name}':`)
-        
-        // Only retry for certain error types (network, timeout, unknown - not corrupted/invalid)
-        const isRetryable = errorInfo.type === PdfErrorType.NETWORK || 
-                           errorInfo.type === PdfErrorType.TIMEOUT ||
-                           errorInfo.type === PdfErrorType.UNKNOWN
-        
-        if (!isRetryable) {
-          break // Don't retry for corrupted/invalid files
-        }
-        
-        retryCount++
-        logger.log(`Retrying file '${file.name}' (attempt ${retryCount + 1}/${MAX_RETRIES + 1})...`)
-        
-        // Yield before retry to give browser time to recover
-        await yieldToBrowserIfNeeded(file.size, isMobile, true)
-        
-        result = await processFile(file, fileIndex, pdfCacheRef.current, isMobile)
-      }
-      
+
+      // Yield to browser before processing (important for large files and mobile)
+      await yieldToBrowserIfNeeded(file.size, isMobile, i > 0)
+
+      const result = await processFileWithRetry(file, fileIndex, pdfCacheRef.current, isMobile)
+
       if ('error' in result) {
-        // Enhance error message for memory-related issues
-        let errorMessage = result.error
-        if (errorMessage.includes('memory') || errorMessage.includes('allocation') || 
-            errorMessage.includes('out of memory') || errorMessage.toLowerCase().includes('quota')) {
-          errorMessage = `${errorMessage} The file may be too large for your device's available memory. Try closing other browser tabs or processing fewer files at once.`
-        }
-        validationErrors.push(errorMessage)
-        logger.error(`Failed to process file '${file.name}' after ${retryCount + 1} attempt(s):`, errorMessage)
+        validationErrors.push(result.error)
       } else {
         pdfFilesToAdd.push(result.pdfFile)
         logger.log(`Successfully processed file '${file.name}' (${i + 1}/${fileArray.length})`)
       }
-      
-      // Yield after processing each file (especially on mobile)
-      // This keeps the UI responsive and allows memory to be freed
+
+      // Yield after processing to keep UI responsive
       if (i < fileArray.length - 1) {
         await yieldToBrowserIfNeeded(file.size, isMobile, true)
       }
     }
 
-    // Add all successfully processed files at once
+    // Update state with successfully processed files
     if (pdfFilesToAdd.length > 0) {
       setPdfFiles((prev) => [...prev, ...pdfFilesToAdd])
     }
 
+    // Report errors or clear error state
     if (validationErrors.length > 0) {
-      const errorMessage = formatValidationErrors(validationErrors)
-      onError(errorMessage)
+      onError(formatValidationErrors(validationErrors))
     } else if (pdfFilesToAdd.length > 0 || fileArray.length > 0) {
-      // Clear error if we successfully processed at least one file
       onError(null)
     }
-  }, []) // Removed pdfFiles dependency - using ref instead for better performance
+  }, []) // Using ref instead of pdfFiles dependency for better performance
 
   // Keep ref in sync with state
   React.useEffect(() => {

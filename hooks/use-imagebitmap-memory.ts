@@ -39,9 +39,13 @@ export function useImageBitmapMemory(config: MemoryMonitoringConfig = {}): void 
   React.useEffect(() => {
     const cache = cacheRef.current
     let intervalId: ReturnType<typeof setInterval> | null = null
+    let checkCount = 0
+    const LOG_INTERVAL = 5 // Log every 5 checks (25 seconds with default 5s interval)
 
-    const checkMemory = () => {
+    const checkMemory = (): void => {
       try {
+        checkCount++
+
         // Check system memory pressure
         const systemMemoryHigh = isMemoryPressureHigh(memoryThreshold)
         if (systemMemoryHigh === true) {
@@ -62,8 +66,8 @@ export function useImageBitmapMemory(config: MemoryMonitoringConfig = {}): void 
           return
         }
 
-        // Log memory stats periodically (every 5 checks = 25 seconds)
-        if (Math.random() < 0.2) {
+        // Log memory stats periodically (every LOG_INTERVAL checks)
+        if (checkCount % LOG_INTERVAL === 0) {
           const systemMemory = getMemoryUsagePercent()
           logger.log(
             `Memory stats - System: ${systemMemory !== null ? Math.round(systemMemory) + '%' : 'N/A'}, ` +
@@ -81,7 +85,7 @@ export function useImageBitmapMemory(config: MemoryMonitoringConfig = {}): void 
     // Initial check
     checkMemory()
 
-    return () => {
+    return (): void => {
       if (intervalId) {
         clearInterval(intervalId)
       }

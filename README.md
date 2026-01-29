@@ -2,8 +2,22 @@
 
 ![Next.js](https://img.shields.io/badge/Next.js-16.1.5-black?style=flat-square&logo=next.js)
 ![React](https://img.shields.io/badge/React-19.2.4-61DAFB?style=flat-square&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
+
+## Screenshots
+
+**Dark Mode**
+![Upload interface in dark mode](./public/screenshots/1%20-%20Dark%20mode.png)
+
+**Light Mode**
+![Upload interface in light mode](./public/screenshots/2%20-%20Light%20mode.png)
+
+**Editor - Delete, Sort & Rotate**
+![PDF editor showing page thumbnails with delete, sort, and rotate controls](./public/screenshots/3%20-%20Editor%20-%20Delete%20Sort%20Rotate.png)
+
+**Pages per Row Slider**
+![Customizable grid layout with pages per row slider](./public/screenshots/4%20-%20Pages%20per%20Row%20Slider.png)
 
 A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract pages from PDF files and images with client-side processing (hosting provider may collect connection metadata). All file processing happens entirely in your browser.
 
@@ -65,10 +79,12 @@ helvety-pdf/
 │   ├── error-boundary.tsx # Error boundary component
 │   ├── navbar.tsx         # Navigation bar
 │   ├── helvety-pdf.tsx    # Main PDF management component
+│   ├── pdf-action-buttons.tsx   # Action buttons for PDF operations
+│   ├── pdf-image-thumbnail.tsx # Image thumbnail component
+│   ├── pdf-imagebitmap-thumbnail.tsx # ImageBitmap-based thumbnail component
+│   ├── pdf-page-error-boundary.tsx # Page-level error boundary
 │   ├── pdf-page-grid.tsx  # PDF page grid layout
 │   ├── pdf-page-thumbnail.tsx  # Individual page thumbnail
-│   ├── pdf-image-thumbnail.tsx # Image thumbnail component
-│   ├── pdf-action-buttons.tsx   # Action buttons for PDF operations
 │   ├── pdf-toolkit.tsx    # PDF toolkit utilities
 │   ├── theme-provider.tsx # Theme context provider
 │   └── theme-switcher.tsx # Dark/light mode switcher
@@ -112,7 +128,6 @@ helvety-pdf/
 │   ├── pdf-rendering-worker.ts # PDF rendering worker utilities
 │   ├── pdf-rotation.ts    # PDF page rotation utilities
 │   ├── pdf-utils.ts       # PDF utility functions - main entry point and re-exports
-│   ├── performance-utils.ts # Performance benchmarking utilities
 │   ├── thumbnail-dpr.ts   # Thumbnail device pixel ratio utilities
 │   ├── timeout-utils.ts  # Timeout utility functions
 │   ├── types.ts           # TypeScript type definitions

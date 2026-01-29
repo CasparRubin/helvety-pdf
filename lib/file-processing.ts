@@ -4,7 +4,7 @@
  */
 
 // External libraries
-import { PDFDocument } from "pdf-lib"
+import type { PDFDocument } from "pdf-lib"
 
 // Internal utilities
 import { safeRevokeObjectURL } from "./blob-url-utils"

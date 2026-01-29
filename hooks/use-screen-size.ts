@@ -26,7 +26,7 @@ export function useScreenSize(): UseScreenSizeReturn {
   React.useEffect(() => {
     if (typeof window === "undefined") return
 
-    const updateScreenSize = () => {
+    const updateScreenSize = (): void => {
       const w = window.innerWidth
       setWidth(w)
       

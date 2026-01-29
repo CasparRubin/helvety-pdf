@@ -1,10 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Public_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const publicSans = Public_Sans({ subsets: ['latin'], variable: '--font-sans' });
+// Local Public Sans variable font - no network fetch during build
+const publicSans = localFont({
+  src: [
+    {
+      path: '../node_modules/@fontsource-variable/public-sans/files/public-sans-latin-wght-normal.woff2',
+      style: 'normal',
+    },
+    {
+      path: '../node_modules/@fontsource-variable/public-sans/files/public-sans-latin-wght-italic.woff2',
+      style: 'italic',
+    },
+  ],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const viewport: Viewport = {
   width: "device-width",

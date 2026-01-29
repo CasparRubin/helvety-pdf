@@ -35,24 +35,26 @@ export const ERROR_TEMPLATES = {
 
 /**
  * Formats a single error message according to standards.
+ * Internal helper function - not exported.
  * 
  * @param error - The error message
  * @returns Formatted error message (trimmed)
  */
-export function formatSingleError(error: string): string {
+function formatSingleError(error: string): string {
   return error.trim()
 }
 
 /**
  * Formats multiple error messages into a single formatted string.
  * Each error is numbered for clarity.
+ * Internal helper function - not exported.
  * 
  * Format: "Some files couldn't be added:\n1. Error 1\n2. Error 2..."
  * 
  * @param errors - Array of error messages
  * @returns Formatted error message with numbered list, or single error if only one
  */
-export function formatMultipleErrors(errors: ReadonlyArray<string>): string {
+function formatMultipleErrors(errors: ReadonlyArray<string>): string {
   if (errors.length === 0) {
     return ""
   }

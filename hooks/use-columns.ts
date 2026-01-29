@@ -67,7 +67,7 @@ export function useColumns(): [number | undefined, (columns: number) => void] {
   React.useEffect(() => {
     if (typeof window === "undefined") return
 
-    const handleResize = () => {
+    const handleResize = (): void => {
       setColumns(calculateColumns())
     }
 

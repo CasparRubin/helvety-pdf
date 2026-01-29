@@ -88,7 +88,7 @@ export function HelvetyPdf(): React.JSX.Element {
   const handleFileInput = React.useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
     const files: FileList | null = e.target.files
     if (files && files.length > 0) {
-      validateAndAddFilesBase(files, setError)
+      void validateAndAddFilesBase(files, setError)
     }
     // Reset input so same file can be selected again
     if (fileInputRef.current) {
@@ -98,7 +98,7 @@ export function HelvetyPdf(): React.JSX.Element {
 
   // Wrapper for drag drop file handling
   const handleDropWithFiles = React.useCallback((files: FileList): void => {
-    validateAndAddFilesBase(files, setError)
+    void validateAndAddFilesBase(files, setError)
   }, [validateAndAddFilesBase, setError])
 
   // File removal with state cleanup

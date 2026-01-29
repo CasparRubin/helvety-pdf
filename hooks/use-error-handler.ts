@@ -41,9 +41,10 @@ export function useErrorHandler(isProcessing: boolean): UseErrorHandlerReturn {
         }, DELAYS.ERROR_AUTO_DISMISS)
       }
 
-      return () => {
+      return (): void => {
         if (errorTimeoutRef.current) {
           clearTimeout(errorTimeoutRef.current)
+          errorTimeoutRef.current = null
         }
       }
     }

@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import tseslint from "typescript-eslint";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -14,8 +15,21 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Ignore minified third-party files
     "public/pdf.worker.min.mjs",
+    "public/pdf-rendering-worker.js",
   ]),
+  // Type-aware linting configuration
   {
+    files: ["**/*.ts", "**/*.tsx", "**/*.mts"],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    plugins: {
+      "@typescript-eslint": tseslint.plugin,
+    },
     rules: {
       // Allow unused variables/parameters prefixed with underscore
       // This is a common pattern for intentionally unused parameters
@@ -53,18 +67,21 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-duplicate-enum-values": "error",
       "@typescript-eslint/no-extra-non-null-assertion": "warn",
       "@typescript-eslint/no-non-null-asserted-optional-chain": "error",
-      // Note: The following rules require type-aware linting which isn't configured
-      // in the current Next.js ESLint setup. These patterns are still encouraged
-      // in code reviews and can be enabled if type-aware linting is configured:
-      // - @typescript-eslint/prefer-nullish-coalescing
-      // - @typescript-eslint/prefer-optional-chain
-      // - @typescript-eslint/no-unnecessary-condition
-      // - @typescript-eslint/prefer-readonly
-      // - @typescript-eslint/no-floating-promises
-      // - @typescript-eslint/await-thenable
-      // - @typescript-eslint/no-misused-promises
-      // - @typescript-eslint/prefer-includes
-      // - @typescript-eslint/prefer-string-starts-ends-with
+      // Type-aware rules (require parserOptions.project)
+      "@typescript-eslint/prefer-nullish-coalescing": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": [
+        "error",
+        {
+          checksVoidReturn: {
+            attributes: false, // Allow async event handlers in JSX
+          },
+        },
+      ],
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/prefer-includes": "warn",
+      "@typescript-eslint/prefer-string-starts-ends-with": "warn",
     },
   },
 ]);

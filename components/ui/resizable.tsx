@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 function ResizablePanelGroup({
   className,
   ...props
-}: GroupProps) {
+}: GroupProps): React.JSX.Element {
   return (
     <Group
       data-slot="resizable-panel-group"
@@ -23,7 +23,7 @@ function ResizablePanelGroup({
 
 function ResizablePanel({
   ...props
-}: PanelProps) {
+}: PanelProps): React.JSX.Element {
   return <Panel data-slot="resizable-panel" {...props} />
 }
 
@@ -33,7 +33,7 @@ function ResizableHandle({
   ...props
 }: SeparatorProps & {
   withHandle?: boolean
-}) {
+}): React.JSX.Element {
   return (
     <Separator
       data-slot="resizable-handle"

@@ -60,17 +60,17 @@ export function useVirtualScrolling(
     }
 
     const container = containerRef.current
-    const updateVisibleIndices = () => {
-      const scrollTop = container.scrollTop || window.scrollY
+    const updateVisibleIndices = (): void => {
+      const scrollTop = container.scrollTop ?? window.scrollY
       const viewportHeight = window.innerHeight
       
       // Calculate visible range
       // For now, we'll use a simpler approach: render items within viewport + overscan
       // A more sophisticated implementation would calculate based on item positions
-      const startIndex = Math.max(0, Math.floor(scrollTop / (itemHeight || 400)) - overscan)
+      const startIndex = Math.max(0, Math.floor(scrollTop / (itemHeight ?? 400)) - overscan)
       const endIndex = Math.min(
         totalItems - 1,
-        Math.ceil((scrollTop + viewportHeight) / (itemHeight || 400)) + overscan
+        Math.ceil((scrollTop + viewportHeight) / (itemHeight ?? 400)) + overscan
       )
 
       const newVisibleIndices = new Set<number>()
@@ -86,7 +86,7 @@ export function useVirtualScrolling(
 
     // Update on scroll (throttled)
     let ticking = false
-    const handleScroll = () => {
+    const handleScroll = (): void => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           updateVisibleIndices()

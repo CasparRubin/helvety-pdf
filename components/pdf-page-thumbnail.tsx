@@ -137,7 +137,7 @@ function PdfPageThumbnailComponent({
     }
 
     // Check cache for existing ImageBitmap
-    const cacheKey = `${fileUrl}:${pageNumber}:${pageWidth}:${isHighQuality ? devicePixelRatio : devicePixelRatio * 0.75}:${rotation || 0}`
+    const cacheKey = `${fileUrl}:${pageNumber}:${pageWidth}:${isHighQuality ? devicePixelRatio : devicePixelRatio * 0.75}:${rotation ?? 0}`
     const cache = getImageBitmapCache()
     const cached = cache.get(cacheKey)
     
@@ -424,7 +424,7 @@ function PdfPageThumbnailComponent({
                       }}
                     >
                       <Page
-                        key={`${pageNumber}-${pageWidth}-${rotation || 0}-${renderRetryCountRef.current}-${isHighQuality ? 'hq' : 'lq'}`}
+                        key={`${pageNumber}-${pageWidth}-${rotation ?? 0}-${renderRetryCountRef.current}-${isHighQuality ? 'hq' : 'lq'}`}
                         pageNumber={pageNumber}
                         width={pageWidth}
                         renderTextLayer={false}
