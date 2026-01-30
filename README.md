@@ -5,31 +5,28 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue?style=flat-square&logo=typescript)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
+## Demo
+
+![Demo](./public/screencapture/demo.gif)
+
 ## Screenshots
 
-### Desktop
-
-**Dark Mode**
-
-![Desktop upload interface in dark mode](./public/screenshots/Dark%20mode.png)
-
-**Light Mode**
-
-![Desktop upload interface in light mode](./public/screenshots/Light%20mode.png)
-
-**Dark Mode - Editor**
-
-![Desktop PDF editor with page thumbnails and editing controls in dark mode](./public/screenshots/Dark%20mode%20Functionality.png)
-
-**Light Mode - Editor**
-
-![Desktop PDF editor with page thumbnails and editing controls in light mode](./public/screenshots/Light%20mode%20Functionality.png)
-
-### Mobile
-
-**Dark Mode - Editor**
-
-![Mobile PDF editor with page thumbnails and editing controls](./public/screenshots/Dark%20mode%20Mobile%20Functionality.png)
+<table>
+  <tr>
+    <td align="center"><strong>Dark Mode</strong></td>
+    <td align="center"><strong>Light Mode</strong></td>
+    <td align="center"><strong>Dark Mode - Editor</strong></td>
+    <td align="center"><strong>Light Mode - Editor</strong></td>
+    <td align="center"><strong>Mobile - Editor</strong></td>
+  </tr>
+  <tr>
+    <td><img src="./public/screenshots/Dark%20mode.png" alt="Desktop upload interface in dark mode" width="200"/></td>
+    <td><img src="./public/screenshots/Light%20mode.png" alt="Desktop upload interface in light mode" width="200"/></td>
+    <td><img src="./public/screenshots/Dark%20mode%20Functionality.png" alt="Desktop PDF editor in dark mode" width="200"/></td>
+    <td><img src="./public/screenshots/Light%20mode%20Functionality.png" alt="Desktop PDF editor in light mode" width="200"/></td>
+    <td><img src="./public/screenshots/Dark%20mode%20Mobile%20Functionality.png" alt="Mobile PDF editor" width="100"/></td>
+  </tr>
+</table>
 
 A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract pages from PDF files and images with client-side processing (hosting provider may collect connection metadata). All file processing happens entirely in your browser.
 
