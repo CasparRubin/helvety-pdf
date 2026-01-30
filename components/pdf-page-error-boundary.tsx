@@ -37,7 +37,7 @@ export class PageErrorBoundary extends React.Component<
     return { hasError: true }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     const errorMessage = error?.message || String(error)
     logger.error('PageErrorBoundary caught an error:', {
       error,
@@ -52,14 +52,14 @@ export class PageErrorBoundary extends React.Component<
     }
   }
 
-  componentDidUpdate(prevProps: PageErrorBoundaryProps): void {
+  override componentDidUpdate(prevProps: PageErrorBoundaryProps): void {
     // Reset error state when retry key changes (indicating a retry)
     if (prevProps.retryKey !== this.props.retryKey && this.state.hasError) {
       this.setState({ hasError: false })
     }
   }
 
-  render(): React.ReactNode {
+  override render(): React.ReactNode {
     if (this.state.hasError) {
       return null
     }

@@ -1,4 +1,5 @@
 import { defineConfig, globalIgnores } from "eslint/config";
+import importPlugin from "eslint-plugin-import";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import tseslint from "typescript-eslint";
@@ -6,18 +7,7 @@ import tseslint from "typescript-eslint";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    // Ignore minified third-party files
-    "public/pdf.worker.min.mjs",
-    "public/pdf-rendering-worker.js",
-  ]),
-  // Type-aware linting configuration
+  // Type-aware linting and import ordering configuration
   {
     files: ["**/*.ts", "**/*.tsx", "**/*.mts"],
     languageOptions: {
@@ -29,10 +19,55 @@ const eslintConfig = defineConfig([
     },
     plugins: {
       "@typescript-eslint": tseslint.plugin,
+      import: importPlugin,
+    },
+    settings: {
+      "import/resolver": {
+        typescript: {
+          project: "./tsconfig.json",
+        },
+      },
     },
     rules: {
-      // Allow unused variables/parameters prefixed with underscore
-      // This is a common pattern for intentionally unused parameters
+      // React rules
+      "react-hooks/exhaustive-deps": "warn",
+      "react/no-unescaped-entities": "error",
+      "react/jsx-key": "error",
+      "react/no-array-index-key": "warn",
+
+      // Import organization
+      "import/order": [
+        "error",
+        {
+          groups: [
+            "builtin",
+            "external",
+            "internal",
+            "parent",
+            "sibling",
+            "index",
+            "type",
+          ],
+          pathGroups: [
+            {
+              pattern: "@/**",
+              group: "internal",
+              position: "after",
+            },
+          ],
+          pathGroupsExcludedImportTypes: ["type"],
+          "newlines-between": "always",
+          alphabetize: {
+            order: "asc",
+            caseInsensitive: true,
+          },
+        },
+      ],
+      "import/no-unresolved": "off",
+      "import/no-duplicates": "error",
+
+      // TypeScript rules - underscore ignore pattern
+      "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
@@ -42,19 +77,21 @@ const eslintConfig = defineConfig([
           destructuredArrayIgnorePattern: "^_",
         },
       ],
-      // Code quality rules - warn level for gradual adoption
-      // Encourage explicit return types for better type safety and documentation
-      "@typescript-eslint/explicit-function-return-type": [
-        "warn",
+
+      // Type-aware rules
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": [
+        "error",
         {
-          allowExpressions: true,
-          allowTypedFunctionExpressions: true,
-          allowHigherOrderFunctions: true,
-          allowDirectConstAssertionInArrowFunctions: true,
+          checksVoidReturn: {
+            attributes: false,
+          },
         },
       ],
-      // Enforce consistent type definitions
-      "@typescript-eslint/consistent-type-definitions": ["warn", "interface"],
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/prefer-nullish-coalescing": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
       "@typescript-eslint/consistent-type-imports": [
         "warn",
         {
@@ -62,28 +99,25 @@ const eslintConfig = defineConfig([
           fixStyle: "separate-type-imports",
         },
       ],
-      // Prevent common mistakes
-      "@typescript-eslint/no-array-constructor": "warn",
-      "@typescript-eslint/no-duplicate-enum-values": "error",
-      "@typescript-eslint/no-extra-non-null-assertion": "warn",
-      "@typescript-eslint/no-non-null-asserted-optional-chain": "error",
-      // Type-aware rules (require parserOptions.project)
-      "@typescript-eslint/prefer-nullish-coalescing": "warn",
-      "@typescript-eslint/prefer-optional-chain": "warn",
-      "@typescript-eslint/no-floating-promises": "error",
-      "@typescript-eslint/no-misused-promises": [
-        "error",
-        {
-          checksVoidReturn: {
-            attributes: false, // Allow async event handlers in JSX
-          },
-        },
-      ],
-      "@typescript-eslint/await-thenable": "error",
-      "@typescript-eslint/prefer-includes": "warn",
-      "@typescript-eslint/prefer-string-starts-ends-with": "warn",
+
+      // Code quality
+      "prefer-const": "error",
+      "no-var": "error",
+      "object-shorthand": "error",
+      "prefer-arrow-callback": "error",
+      "prefer-template": "warn",
+      "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "node_modules/**",
+    "next-env.d.ts",
+    "public/pdf.worker.min.mjs",
+    "public/pdf-rendering-worker.js",
+  ]),
 ]);
 
 export default eslintConfig;

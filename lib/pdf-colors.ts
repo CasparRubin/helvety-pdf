@@ -23,7 +23,8 @@ const PDF_COLOR_PALETTE = [
  * @returns An oklch color string from the palette
  */
 export function getPdfColor(fileIndex: number): string {
-  return PDF_COLOR_PALETTE[fileIndex % PDF_COLOR_PALETTE.length]
+  // Modulo guarantees valid index, use fallback for type safety
+  return PDF_COLOR_PALETTE[fileIndex % PDF_COLOR_PALETTE.length] ?? PDF_COLOR_PALETTE[0] ?? "oklch(0.65 0.22 25)"
 }
 
 /**

@@ -117,7 +117,7 @@ export async function createRotatedImagePage(
  * @param isImage - Whether this page is from an image (only affects 180° rotation handling)
  */
 export async function applyPageRotation(
-  sourcePage: PDFPage,
+  _sourcePage: PDFPage,
   targetPage: PDFPage,
   userRotation: number,
   isImage: boolean = false

@@ -60,7 +60,8 @@ function formatMultipleErrors(errors: ReadonlyArray<string>): string {
   }
   
   if (errors.length === 1) {
-    return formatSingleError(errors[0])
+    // Length check guarantees errors[0] exists
+    return formatSingleError(errors[0]!)
   }
   
   const formattedErrors = errors.map((err, idx) => `${idx + 1}. ${formatSingleError(err)}`).join('\n')

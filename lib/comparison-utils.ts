@@ -24,7 +24,8 @@ export function areArraysEqualById<T extends { id: string }>(
 ): boolean {
   if (prev === next) return true
   if (prev.length !== next.length) return false
-  return prev.every((item, i) => item.id === next[i].id)
+  // Length check above guarantees next[i] exists
+  return prev.every((item, i) => item.id === next[i]!.id)
 }
 
 /**

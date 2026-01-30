@@ -261,7 +261,7 @@ function PdfToolkitComponent({
                 max={COLUMNS.MAX}
                 step={1}
                 value={[columns]}
-                onValueChange={(value) => onColumnsChange(value[0])}
+                onValueChange={(value) => onColumnsChange(value[0] ?? COLUMNS.SLIDER_MIN)}
                 className="w-full"
               />
             </div>

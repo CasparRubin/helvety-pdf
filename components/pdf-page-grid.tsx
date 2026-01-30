@@ -67,7 +67,8 @@ function PdfPageGridComponent({
     if (targetIndex < 0 || targetIndex >= pageOrder.length) return
     
     const newOrder = [...pageOrder]
-    ;[newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]]
+    // Bounds already validated above, safe to assert non-null
+    ;[newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex]!, newOrder[index]!]
     onReorder(newOrder)
   }, [pageOrder, onReorder])
 

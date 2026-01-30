@@ -151,7 +151,7 @@ This application is built with performance and code quality in mind:
 - **LRU Cache Strategy** - Uses Least Recently Used (LRU) cache eviction for optimal memory management
 - **Batch Processing** - Processes PDF pages in adaptive batches (3-10 pages) to prevent UI blocking
 - **Optimized Memoization** - Smart memoization with early short-circuiting for efficient re-renders
-- **Type Safety** - Comprehensive TypeScript types with explicit return types throughout
+- **Strict TypeScript** - Comprehensive type safety with `noUncheckedIndexedAccess`, `noImplicitReturns`, `noUnusedLocals`, and other strict compiler options
 - **Error Handling** - Centralized error handling with detailed context and recovery strategies
 - **Code Organization** - Modular architecture with extracted utilities and reusable components
 

@@ -75,6 +75,7 @@ export function usePageDragDrop({
 
     const newOrder = [...pageOrder]
     const draggedPage = newOrder[draggedIndex]
+    if (draggedPage === undefined) return
     newOrder.splice(draggedIndex, 1)
     newOrder.splice(dropIndex, 0, draggedPage)
     onReorder(newOrder)

@@ -279,7 +279,9 @@ export function usePdfFiles(): UsePdfFilesReturn {
     const usedNamesInBatch = new Set<string>()
 
     for (let i = 0; i < fileArray.length; i++) {
-      let file = fileArray[i]
+      const originalFile = fileArray[i]
+      if (!originalFile) continue
+      let file: File = originalFile
       const fileIndex = currentPdfFiles.length + pdfFilesToAdd.length
 
       // Generate unique filename if this is a duplicate
@@ -287,7 +289,7 @@ export function usePdfFiles(): UsePdfFilesReturn {
       if (uniqueName !== file.name) {
         // Create a new File object with the unique name
         file = new File([file], uniqueName, { type: file.type })
-        logger.log(`Renamed duplicate file '${fileArray[i].name}' to '${uniqueName}'`)
+        logger.log(`Renamed duplicate file '${originalFile.name}' to '${uniqueName}'`)
       }
       usedNamesInBatch.add(uniqueName)
 
