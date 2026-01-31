@@ -1,6 +1,7 @@
 import localFont from "next/font/local";
 
 import { AuthProvider } from "@/components/auth-provider";
+import { AuthTokenHandler } from "@/components/auth-token-handler";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -124,6 +125,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <AuthTokenHandler />
           <TooltipProvider>
             <AuthProvider>
               <div className="flex h-screen flex-col overflow-hidden">
