@@ -1,25 +1,26 @@
 "use client"
 
-import * as React from "react"
-import { cn, debounce } from "@/lib/utils"
 import { FileTextIcon, AlertCircle } from "lucide-react"
 import dynamic from "next/dynamic"
-import { useScreenSize } from "@/hooks/use-screen-size"
-import { useProgressiveQuality } from "@/hooks/use-progressive-quality"
+import * as React from "react"
+
+import { PdfImageThumbnail } from "@/components/pdf-image-thumbnail"
+import { PdfImageBitmapThumbnail } from "@/components/pdf-imagebitmap-thumbnail"
+import { PageErrorBoundary } from "@/components/pdf-page-error-boundary"
 import { usePdfRendering } from "@/hooks/use-pdf-rendering"
 import { usePdfWorker } from "@/hooks/use-pdf-worker"
+import { useProgressiveQuality } from "@/hooks/use-progressive-quality"
+import { useScreenSize } from "@/hooks/use-screen-size"
 import { useThumbnailIntersection } from "@/hooks/use-thumbnail-intersection"
-import { logger } from "@/lib/logger"
 import { 
   THUMBNAIL_DIMENSIONS, 
   PDF_RENDER,
   ROTATION_ANGLES
 } from "@/lib/constants"
-import { calculateOptimalDPR } from "@/lib/thumbnail-dpr"
-import { PdfImageThumbnail } from "@/components/pdf-image-thumbnail"
-import { PdfImageBitmapThumbnail } from "@/components/pdf-imagebitmap-thumbnail"
-import { PageErrorBoundary } from "@/components/pdf-page-error-boundary"
 import { getImageBitmapCache } from "@/lib/imagebitmap-cache"
+import { logger } from "@/lib/logger"
+import { calculateOptimalDPR } from "@/lib/thumbnail-dpr"
+import { cn, debounce } from "@/lib/utils"
 
 // Dynamically import react-pdf to avoid SSR issues
 const Document = dynamic(

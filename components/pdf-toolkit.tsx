@@ -1,12 +1,8 @@
 "use client"
 
-// React
+import { Download, Loader2, Trash2, X, Upload, Crown, Check, ShoppingBag } from "lucide-react"
 import * as React from "react"
 
-// External libraries
-import { Download, Loader2, Trash2, X, Upload } from "lucide-react"
-
-// Internal components
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,18 +14,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Slider } from "@/components/ui/slider"
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-
-// Internal utilities
-import { cn } from "@/lib/utils"
-import { addOklchAlpha } from "@/lib/pdf-colors"
+import { Slider } from "@/components/ui/slider"
 import { BREAKPOINTS, COLUMNS } from "@/lib/constants"
+import { addOklchAlpha } from "@/lib/pdf-colors"
+import { cn } from "@/lib/utils"
 
-// Types
 import type { PdfFile } from "@/lib/types"
+import type { SubscriptionTier, TierLimits } from "@/lib/types/subscription"
 
 interface PdfToolkitProps {
   readonly pdfFiles: ReadonlyArray<PdfFile>
@@ -43,6 +37,14 @@ interface PdfToolkitProps {
   readonly isProcessing: boolean
   readonly columns?: number
   readonly onColumnsChange?: (columns: number) => void
+  /** Current subscription tier */
+  readonly tier?: SubscriptionTier
+  /** Current tier limits */
+  readonly limits?: TierLimits
+  /** Whether more files can be added */
+  readonly canAddMoreFiles?: boolean
+  /** Remaining file slots */
+  readonly remainingFileSlots?: number
 }
 
 /** Tailwind lg breakpoint in pixels */
@@ -60,7 +62,12 @@ function PdfToolkitComponent({
   isProcessing,
   columns,
   onColumnsChange,
+  tier,
+  limits,
+  canAddMoreFiles = true,
+  remainingFileSlots = Infinity,
 }: PdfToolkitProps): React.JSX.Element {
+  const isPro = tier === 'pro'
   const [showColumnSlider, setShowColumnSlider] = React.useState(false)
   const [isStackedLayout, setIsStackedLayout] = React.useState(false)
 
@@ -89,7 +96,7 @@ function PdfToolkitComponent({
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 onClick={onAddFiles}
-                disabled={isProcessing}
+                disabled={isProcessing || !canAddMoreFiles}
                 variant="outline"
                 size="default"
               >
@@ -196,7 +203,7 @@ function PdfToolkitComponent({
             )}
             <Button
               onClick={onAddFiles}
-              disabled={isProcessing}
+              disabled={isProcessing || !canAddMoreFiles}
               variant="outline"
               className="w-full"
               size="lg"
@@ -205,7 +212,13 @@ function PdfToolkitComponent({
               {pdfFiles.length === 0 ? "Add Files" : "Add More Files"}
             </Button>
             <p className="text-xs text-muted-foreground text-center">
-              PDF files and images are supported
+              {!canAddMoreFiles && limits ? (
+                <span className="text-destructive">File limit reached ({limits.maxFiles} files)</span>
+              ) : remainingFileSlots !== Infinity && remainingFileSlots <= 2 ? (
+                <span>{remainingFileSlots} file{remainingFileSlots !== 1 ? 's' : ''} remaining</span>
+              ) : (
+                "PDF files and images are supported"
+              )}
             </p>
             {pdfFiles.length > 0 && (
               <AlertDialog>
@@ -268,7 +281,7 @@ function PdfToolkitComponent({
           </div>
         )}
 
-        {/* Statistics */}
+        {/* Statistics with tier-based limits */}
         {pdfFiles.length > 0 && columns !== 1 && (
           <div className="space-y-3">
             <h3 className="text-sm font-semibold">Statistics</h3>
@@ -276,12 +289,22 @@ function PdfToolkitComponent({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Total Pages</span>
-                  <Badge variant="secondary">{totalPages}</Badge>
+                  <div className="flex items-center gap-1">
+                    <Badge variant="secondary">{totalPages}</Badge>
+                    {limits && limits.maxPages !== Infinity && (
+                      <span className="text-xs text-muted-foreground">/ {limits.maxPages}</span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Files</span>
-                <Badge variant="secondary">{pdfFiles.length}</Badge>
+                <div className="flex items-center gap-1">
+                  <Badge variant="secondary">{pdfFiles.length}</Badge>
+                  {limits && limits.maxFiles !== Infinity && (
+                    <span className="text-xs text-muted-foreground">/ {limits.maxFiles}</span>
+                  )}
+                </div>
               </div>
               {deletedCount > 0 && (
                 <div className="flex items-center justify-between">
@@ -294,6 +317,75 @@ function PdfToolkitComponent({
                   <span className="text-muted-foreground">Rotated</span>
                   <Badge variant="default">{rotatedCount}</Badge>
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tier info section */}
+        {tier && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold">Your Plan</h3>
+            <div className="rounded-lg border bg-muted/50 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Current Plan</span>
+                {isPro ? (
+                  <Badge variant="default">
+                    <Crown className="h-3 w-3 mr-1" />
+                    Pro
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">{limits?.name ?? 'Basic'}</Badge>
+                )}
+              </div>
+              {/* Show limits and upgrade prompt only for non-Pro users */}
+              {!isPro && (
+                <>
+                  {limits && (
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>Max {limits.maxFiles} files, {limits.maxPages} pages</p>
+                      {!limits.canRotate && <p>Rotation not available</p>}
+                    </div>
+                  )}
+                  <div className="border-t pt-3">
+                    <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                      <Crown className="h-4 w-4" />
+                      Upgrade to Pro
+                    </h4>
+                    <ul className="space-y-1 mb-3">
+                      {[
+                        'Unlimited file uploads',
+                        'Unlimited pages',
+                        'Rotate pages',
+                        'All merge & split features',
+                        'Client-side processing',
+                        'Priority support',
+                      ].map((feature) => (
+                        <li key={feature} className="flex items-center gap-2 text-xs">
+                          <Check className="h-3 w-3 text-primary shrink-0" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Only <span className="font-medium text-foreground">CHF 4.95/month</span>
+                    </p>
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      asChild
+                    >
+                      <a
+                        href="https://store.helvety.com/products/helvety-pdf"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ShoppingBag className="h-4 w-4" />
+                        Upgrade Now
+                      </a>
+                    </Button>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -362,9 +454,26 @@ function arePropsEqual(
     prevProps.columns !== nextProps.columns ||
     prevProps.totalPages !== nextProps.totalPages ||
     prevProps.deletedCount !== nextProps.deletedCount ||
-    prevProps.rotatedCount !== nextProps.rotatedCount
+    prevProps.rotatedCount !== nextProps.rotatedCount ||
+    prevProps.tier !== nextProps.tier ||
+    prevProps.canAddMoreFiles !== nextProps.canAddMoreFiles ||
+    prevProps.remainingFileSlots !== nextProps.remainingFileSlots
   ) {
     return false // Props changed, re-render
+  }
+
+  // Compare limits object
+  if (prevProps.limits !== nextProps.limits) {
+    if (!prevProps.limits || !nextProps.limits) {
+      return false
+    }
+    if (
+      prevProps.limits.maxFiles !== nextProps.limits.maxFiles ||
+      prevProps.limits.maxPages !== nextProps.limits.maxPages ||
+      prevProps.limits.canRotate !== nextProps.limits.canRotate
+    ) {
+      return false
+    }
   }
 
   // Compare array length first (fast check)

@@ -4,8 +4,9 @@
  */
 
 import * as React from "react"
-import { cn } from "@/lib/utils"
+
 import { ROTATION_ANGLES } from "@/lib/constants"
+import { cn } from "@/lib/utils"
 
 interface PdfImageBitmapThumbnailProps {
   /** ImageBitmap to render */

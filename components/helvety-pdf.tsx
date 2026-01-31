@@ -1,27 +1,21 @@
 "use client"
 
-// React
+import { Upload } from "lucide-react"
 import * as React from "react"
 
-// External libraries
-import { Upload } from "lucide-react"
-
-// Internal components
+import { useSubscriptionContext } from "@/components/auth-provider"
 import { PdfPageGrid } from "@/components/pdf-page-grid"
 import { PdfToolkit } from "@/components/pdf-toolkit"
 import { ScrollArea } from "@/components/ui/scroll-area"
-
-// Internal utilities
-import { cn } from "@/lib/utils"
-
-// Custom hooks
+import { UpgradePrompt } from "@/components/upgrade-prompt"
 import { useColumns } from "@/hooks/use-columns"
-import { useErrorHandler } from "@/hooks/use-error-handler"
 import { useDragDrop } from "@/hooks/use-drag-drop"
-import { usePdfFiles } from "@/hooks/use-pdf-files"
-import { usePdfProcessing } from "@/hooks/use-pdf-processing"
-import { usePdfPageState } from "@/hooks/use-pdf-page-state"
+import { useErrorHandler } from "@/hooks/use-error-handler"
 import { useImageBitmapMemory } from "@/hooks/use-imagebitmap-memory"
+import { usePdfFiles } from "@/hooks/use-pdf-files"
+import { usePdfPageState } from "@/hooks/use-pdf-page-state"
+import { usePdfProcessing } from "@/hooks/use-pdf-processing"
+import { cn } from "@/lib/utils"
 
 /**
  * Main PDF toolkit component.
@@ -40,8 +34,15 @@ export function HelvetyPdf(): React.JSX.Element {
   // Custom hooks
   const [columns, handleColumnsChange] = useColumns()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  
+  // Subscription context for tier-based limits
+  const { limits, tier } = useSubscriptionContext()
+  
+  // State for showing upgrade prompt
+  const [showUpgradePrompt, setShowUpgradePrompt] = React.useState(false)
+  const [upgradeReason, setUpgradeReason] = React.useState<'files' | 'pages' | 'rotation'>('files')
 
-  // PDF files management
+  // PDF files management with tier-based limits
   const {
     pdfFiles,
     unifiedPages,
@@ -51,7 +52,20 @@ export function HelvetyPdf(): React.JSX.Element {
     removeFile,
     clearAll: clearAllFiles,
     getCachedPdf,
-  } = usePdfFiles()
+    canAddMoreFiles,
+    remainingFileSlots,
+  } = usePdfFiles({
+    maxFiles: limits.maxFiles,
+    maxPages: limits.maxPages,
+    onFileLimitReached: () => {
+      setUpgradeReason('files')
+      setShowUpgradePrompt(true)
+    },
+    onPageLimitReached: () => {
+      setUpgradeReason('pages')
+      setShowUpgradePrompt(true)
+    },
+  })
 
   // Error handling - initialize first, will be updated when processing starts
   const [isProcessing, setIsProcessing] = React.useState(false)
@@ -120,15 +134,23 @@ export function HelvetyPdf(): React.JSX.Element {
     pageState.toggleDelete(unifiedPageNumber, pageOrder.length, setError)
   }, [pageState, pageOrder.length, setError])
 
-  // Page rotation (wrapped for consistency)
+  // Page rotation (wrapped for consistency, gated by tier)
   const handleRotatePage = React.useCallback((unifiedPageNumber: number, angle: number): void => {
+    if (!limits.canRotate) {
+      setUpgradeReason('rotation')
+      setShowUpgradePrompt(true)
+      return
+    }
     pageState.rotatePage(unifiedPageNumber, angle, setError)
-  }, [pageState, setError])
+  }, [pageState, setError, limits.canRotate])
 
   // Reset rotation (wrapped for consistency)
   const handleResetRotation = React.useCallback((unifiedPageNumber: number): void => {
+    if (!limits.canRotate) {
+      return // Silently ignore if rotation not allowed
+    }
     pageState.resetRotation(unifiedPageNumber, setError)
-  }, [pageState, setError])
+  }, [pageState, setError, limits.canRotate])
 
   // Handle click on empty drop zone to open file picker
   const handleEmptyZoneClick = React.useCallback((): void => {
@@ -214,6 +236,7 @@ export function HelvetyPdf(): React.JSX.Element {
                 onExtract={pdfProcessing.extractPage}
                 isProcessing={isProcessing}
                 columns={columns}
+                canRotate={limits.canRotate}
               />
             )}
 
@@ -252,8 +275,20 @@ export function HelvetyPdf(): React.JSX.Element {
           isProcessing={isProcessing}
           columns={columns}
           onColumnsChange={handleColumnsChange}
+          tier={tier}
+          limits={limits}
+          canAddMoreFiles={canAddMoreFiles()}
+          remainingFileSlots={remainingFileSlots}
         />
       </aside>
+
+      {/* Upgrade Prompt Dialog */}
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+        reason={upgradeReason}
+        limits={limits}
+      />
     </div>
   )
 }

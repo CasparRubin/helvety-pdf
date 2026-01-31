@@ -4,10 +4,10 @@
  */
 
 import * as React from "react"
+
 import { getImageBitmapCache } from "@/lib/imagebitmap-cache"
-import { isMemoryPressureHigh, getMemoryUsagePercent } from "@/lib/memory-utils"
-import { isImageBitmapCacheMemoryHigh } from "@/lib/memory-utils"
 import { logger } from "@/lib/logger"
+import { isMemoryPressureHigh, getMemoryUsagePercent , isImageBitmapCacheMemoryHigh } from "@/lib/memory-utils"
 
 /**
  * Configuration for memory monitoring.
@@ -70,7 +70,7 @@ export function useImageBitmapMemory(config: MemoryMonitoringConfig = {}): void 
         if (checkCount % LOG_INTERVAL === 0) {
           const systemMemory = getMemoryUsagePercent()
           logger.log(
-            `Memory stats - System: ${systemMemory !== null ? Math.round(systemMemory) + '%' : 'N/A'}, ` +
+            `Memory stats - System: ${systemMemory !== null ? `${Math.round(systemMemory)  }%` : 'N/A'}, ` +
             `Cache: ${Math.round(stats.memoryUsagePercent)}% (${Math.round(stats.memoryBytes / 1024 / 1024)}MB/${Math.round(stats.maxMemoryBytes / 1024 / 1024)}MB)`
           )
         }

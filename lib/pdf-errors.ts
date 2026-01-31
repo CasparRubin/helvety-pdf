@@ -38,7 +38,7 @@ function sanitizeErrorMessage(message: string): string {
     .trim()
   
   if (sanitized.length > ERROR_LIMITS.MAX_MESSAGE_LENGTH) {
-    sanitized = sanitized.substring(0, ERROR_LIMITS.MAX_MESSAGE_LENGTH - ERROR_LIMITS.TRUNCATE_SUFFIX_LENGTH) + '...'
+    sanitized = `${sanitized.substring(0, ERROR_LIMITS.MAX_MESSAGE_LENGTH - ERROR_LIMITS.TRUNCATE_SUFFIX_LENGTH)  }...`
   }
   
   return sanitized

@@ -1,17 +1,29 @@
 "use client"
 
 // Next.js
+import { Github, Building2, Scale, FileText, Menu, Info, LogOut, Crown, User, ShoppingBag, Check } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 // External libraries
-import { Github, Building2, Scale, FileText, Menu, Info } from "lucide-react"
 
 // Internal components
 import { AppSwitcher } from "@/components/app-switcher"
+import { useSubscriptionContext } from "@/components/auth-provider"
 import { ThemeSwitcher } from "@/components/theme-switcher"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   Sheet,
   SheetContent,
@@ -26,18 +38,28 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
 import { VERSION } from "@/lib/config/version"
+import { createClient } from "@/lib/supabase/client"
 
 export function Navbar() {
+  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const { isAuthenticated, userEmail, isPro, isLoading } = useSubscriptionContext()
+  const supabase = createClient()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   const navLinks = [
     { href: "https://helvety.com/impressum", label: "Impressum", icon: Building2 },
@@ -154,6 +176,110 @@ export function Navbar() {
 
           <ThemeSwitcher />
 
+          {/* User profile popover - only show when authenticated */}
+          {isAuthenticated && !isLoading && (
+            <Popover open={profileOpen} onOpenChange={setProfileOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80">
+                <PopoverHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <User className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <PopoverTitle>Account</PopoverTitle>
+                      {userEmail && (
+                        <PopoverDescription className="truncate">
+                          {userEmail}
+                        </PopoverDescription>
+                      )}
+                    </div>
+                  </div>
+                </PopoverHeader>
+                <Separator />
+                {/* Tier badge and upgrade section */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={isPro ? "default" : "secondary"}>
+                      {isPro ? (
+                        <>
+                          <Crown className="h-3 w-3 mr-1" />
+                          Pro
+                        </>
+                      ) : (
+                        'Basic'
+                      )}
+                    </Badge>
+                  </div>
+                  {!isPro && (
+                    <div className="rounded-lg border bg-muted/50 p-3">
+                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                        <Crown className="h-4 w-4" />
+                        Upgrade to Pro
+                      </h4>
+                      <ul className="space-y-1 mb-3">
+                        {[
+                          'Unlimited file uploads',
+                          'Unlimited pages',
+                          'Rotate pages',
+                          'All merge & split features',
+                          'Client-side processing',
+                          'Priority support',
+                        ].map((feature) => (
+                          <li key={feature} className="flex items-center gap-2 text-xs">
+                            <Check className="h-3 w-3 text-primary shrink-0" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Only <span className="font-medium text-foreground">CHF 4.95/month</span>
+                      </p>
+                      <Button variant="default" className="w-full justify-start" size="sm" asChild>
+                        <a
+                          href="https://store.helvety.com/products/helvety-pdf"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ShoppingBag className="h-4 w-4" />
+                          Upgrade Now
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <Separator />
+                <div className="flex flex-col gap-2">
+                  <Button variant="outline" className="w-full justify-start" asChild>
+                    <a
+                      href="https://store.helvety.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      Helvety Store
+                    </a>
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setProfileOpen(false)
+                      void handleLogout()
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+
           {/* Mobile burger menu */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild className="md:hidden">
@@ -167,6 +293,65 @@ export function Navbar() {
                 <SheetTitle>Navigation</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-2 mt-6">
+                {/* User info section in mobile menu */}
+                {isAuthenticated && !isLoading && (
+                  <>
+                    <div className="px-3 py-2 border-b mb-2">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground truncate">{userEmail}</span>
+                      </div>
+                      <div className="mt-2">
+                        <Badge variant={isPro ? "default" : "secondary"}>
+                          {isPro ? (
+                            <>
+                              <Crown className="h-3 w-3 mr-1" />
+                              Pro
+                            </>
+                          ) : (
+                            'Basic'
+                          )}
+                        </Badge>
+                      </div>
+                    </div>
+                    {!isPro && (
+                      <div className="px-3 py-2 rounded-lg border bg-muted/50">
+                        <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                          <Crown className="h-4 w-4" />
+                          Upgrade to Pro
+                        </h4>
+                        <ul className="space-y-1 mb-3">
+                          {[
+                            'Unlimited file uploads',
+                            'Unlimited pages',
+                            'Rotate pages',
+                            'All merge & split features',
+                            'Client-side processing',
+                            'Priority support',
+                          ].map((feature) => (
+                            <li key={feature} className="flex items-center gap-2 text-xs">
+                              <Check className="h-3 w-3 text-primary shrink-0" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Only <span className="font-medium text-foreground">CHF 4.95/month</span>
+                        </p>
+                        <a
+                          href="https://store.helvety.com/products/helvety-pdf"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <ShoppingBag className="h-4 w-4" />
+                          Upgrade Now
+                        </a>
+                      </div>
+                    )}
+                  </>
+                )}
                 {navLinks.map((link) => {
                   const Icon = link.icon
                   return (
@@ -193,6 +378,19 @@ export function Navbar() {
                   <Github className="h-4 w-4" />
                   GitHub
                 </a>
+                {/* Logout button in mobile menu */}
+                {isAuthenticated && !isLoading && (
+                  <button
+                    className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors text-destructive w-full text-left"
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      void handleLogout()
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </button>
+                )}
               </nav>
             </SheetContent>
           </Sheet>

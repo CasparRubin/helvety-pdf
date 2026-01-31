@@ -1,9 +1,12 @@
-import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import "./globals.css";
+
+import { AuthProvider } from "@/components/auth-provider";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import "./globals.css";
+
+import type { Metadata, Viewport } from "next";
 
 // Local Public Sans variable font - no network fetch during build
 const publicSans = localFont({
@@ -109,13 +112,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex h-screen flex-col overflow-hidden">
-            <Navbar />
-            <main className="flex-1 overflow-hidden">
-              {children}
-            </main>
-          </div>
-          <Toaster />
+          <AuthProvider>
+            <div className="flex h-screen flex-col overflow-hidden">
+              <Navbar />
+              <main className="flex-1 overflow-hidden">
+                {children}
+              </main>
+            </div>
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
