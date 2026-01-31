@@ -73,14 +73,11 @@ export function usePdfRendering(): UsePdfRenderingReturn {
   const activeRendersRef = React.useRef<Map<string, AbortController>>(new Map())
 
   /**
-   * Renders a PDF page to ImageBitmap using canvas rendering (main thread).
+   * Checks cache for a rendered PDF page ImageBitmap.
    * 
-   * Note: This requires the page to be rendered to a canvas first (via react-pdf),
-   * then we convert that canvas to ImageBitmap. The actual PDF rendering still uses
-   * react-pdf, but we cache the result as ImageBitmap for better performance.
-   * 
-   * Worker-based rendering is not currently implemented. The infrastructure exists
-   * but PDF.js integration in workers requires additional complexity.
+   * Note: This hook currently only provides cache lookup functionality.
+   * The actual PDF rendering is handled by react-pdf in PdfPageThumbnail.
+   * Canvas-to-ImageBitmap conversion and worker-based rendering are not implemented.
    */
   const renderPage = React.useCallback(async (params: RenderParams): Promise<RenderResult> => {
     const { fileUrl, pageNumber, width, devicePixelRatio, rotation } = params
@@ -99,9 +96,7 @@ export function usePdfRendering(): UsePdfRenderingReturn {
       }
     }
 
-    // Return null to use the existing react-pdf canvas rendering
-    // The ImageBitmap conversion will happen after the canvas is rendered
-    // This is handled in the PdfPageThumbnail component
+    // No cached ImageBitmap found; PdfPageThumbnail will use react-pdf canvas rendering
     
     if (!capabilities.imageBitmap || !capabilities.createImageBitmap) {
       return {
@@ -111,8 +106,7 @@ export function usePdfRendering(): UsePdfRenderingReturn {
       }
     }
 
-    // Return null to indicate we should use canvas rendering, then convert to ImageBitmap
-    // The actual conversion happens in the component after canvas renders
+    // ImageBitmap not supported; fall back to canvas rendering
     return {
       imageBitmap: null,
       error: 'Use canvas rendering first, then convert',

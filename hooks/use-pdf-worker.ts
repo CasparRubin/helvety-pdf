@@ -56,9 +56,7 @@ export function usePdfWorker(fileType: 'pdf' | 'image'): UsePdfWorkerReturn {
     // Create and cache the initialization Promise
     workerInitPromise = import("react-pdf")
       .then((mod) => {
-        // Use local worker file from public folder (updated to match pdfjs-dist version)
-        // The worker file should be copied from node_modules/pdfjs-dist/build/pdf.worker.min.mjs
-        // to public/pdf.worker.min.mjs to ensure version matching
+        // Use local worker file from public folder (auto-synced via postinstall script)
         mod.pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
         // Wait a bit to ensure worker is fully initialized
         return new Promise<void>((resolve) => {

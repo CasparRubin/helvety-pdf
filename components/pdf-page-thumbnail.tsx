@@ -122,8 +122,7 @@ function PdfPageThumbnailComponent({
   }, [fileUrl, setIsHighQuality])
 
   // Check cache for ImageBitmap when visible
-  // For Phase 1, we check cache but don't actively convert canvas to ImageBitmap yet
-  // The infrastructure is in place for future enhancement
+  // Currently only uses cached ImageBitmaps; canvas-to-ImageBitmap conversion is not implemented
   React.useEffect(() => {
     if (
       fileType !== 'pdf' ||
@@ -147,8 +146,7 @@ function PdfPageThumbnailComponent({
       setLoading(false)
       setError(false)
     } else {
-      // For now, use canvas rendering (fallback)
-      // Future: Convert canvas to ImageBitmap after render
+      // No cached ImageBitmap found, use canvas rendering via react-pdf
       setUseImageBitmap(false)
     }
   }, [
