@@ -14,7 +14,9 @@ import {
   RefreshCw,
   Download
 } from "lucide-react"
+
 import { ROTATION_ANGLES } from "./constants"
+
 import type { ReactNode } from "react"
 
 /**
@@ -53,6 +55,8 @@ export interface CreatePageActionsParams {
   hasRotation: boolean
   rotation: number
   isProcessing: boolean
+  /** Whether rotation is allowed (Pro feature) */
+  canRotate?: boolean
   onMoveUp: (index: number) => void
   onMoveDown: (index: number) => void
   onMoveLeft: (index: number) => void
@@ -77,6 +81,7 @@ export function createPageActions(params: CreatePageActionsParams): PageAction[]
     isDeleted,
     hasRotation,
     isProcessing,
+    canRotate = true,
     onMoveUp,
     onMoveDown,
     onMoveLeft,
@@ -130,23 +135,37 @@ export function createPageActions(params: CreatePageActionsParams): PageAction[]
       disabled: isProcessing,
       variant: isDeleted ? "destructive" : "secondary",
     },
-    // Rotate buttons
-    {
-      icon: <RotateCw className="h-4 w-4" />,
-      onClick: () => onRotate(unifiedPageNumber, ROTATION_ANGLES.INCREMENT),
-      ariaLabel: `Rotate page ${unifiedPageNumber} 90° clockwise`,
-      title: "Rotate 90° clockwise",
-      disabled: isProcessing,
-    },
-    {
-      icon: <RotateCcw className="h-4 w-4" />,
-      onClick: () => onRotate(unifiedPageNumber, -ROTATION_ANGLES.INCREMENT),
-      ariaLabel: `Rotate page ${unifiedPageNumber} 90° counter-clockwise`,
-      title: "Rotate 90° counter-clockwise",
-      disabled: isProcessing,
-    },
-    // Reset rotation button (only show if rotated)
-    ...(hasRotation
+    // Rotate buttons (only show if canRotate is true)
+    ...(canRotate
+      ? [
+          {
+            icon: <RotateCw className="h-4 w-4" />,
+            onClick: () => onRotate(unifiedPageNumber, ROTATION_ANGLES.INCREMENT),
+            ariaLabel: `Rotate page ${unifiedPageNumber} 90° clockwise`,
+            title: "Rotate 90° clockwise",
+            disabled: isProcessing,
+          },
+          {
+            icon: <RotateCcw className="h-4 w-4" />,
+            onClick: () => onRotate(unifiedPageNumber, -ROTATION_ANGLES.INCREMENT),
+            ariaLabel: `Rotate page ${unifiedPageNumber} 90° counter-clockwise`,
+            title: "Rotate 90° counter-clockwise",
+            disabled: isProcessing,
+          },
+        ]
+      : [
+          // Show disabled rotate button with upgrade hint for non-Pro users
+          {
+            icon: <RotateCw className="h-4 w-4" />,
+            onClick: () => onRotate(unifiedPageNumber, ROTATION_ANGLES.INCREMENT),
+            ariaLabel: "Upgrade to Pro for rotation",
+            title: "Pro feature",
+            description: "Upgrade to rotate pages",
+            disabled: true,
+          },
+        ]),
+    // Reset rotation button (only show if rotated AND canRotate)
+    ...(hasRotation && canRotate
       ? [
           {
             icon: <RefreshCw className="h-4 w-4" />,

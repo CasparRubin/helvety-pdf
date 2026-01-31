@@ -80,7 +80,7 @@ export function usePdfPageState(pageOrder: ReadonlyArray<number>): UsePdfPageSta
   const rotatePage = React.useCallback(
     (unifiedPageNumber: number, angle: number, onError: (error: string | null) => void): void => {
       setPageRotations((prev) => {
-        const currentRotation = prev[unifiedPageNumber] || 0
+        const currentRotation = prev[unifiedPageNumber] ?? 0
         const newRotation = normalizeRotation(currentRotation + angle)
         return {
           ...prev,

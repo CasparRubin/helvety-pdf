@@ -1,10 +1,11 @@
 // External libraries
-import type { PDFDocument, PDFPage } from "pdf-lib"
 import { degrees } from "pdf-lib"
 
 // Internal utilities
 import { ROTATION_ANGLES } from "./constants"
 import { validateFiniteNumber } from "./validation-utils"
+
+import type { PDFDocument, PDFPage } from "pdf-lib"
 
 /**
  * Normalizes a rotation angle to 0, 90, 180, or 270 degrees.

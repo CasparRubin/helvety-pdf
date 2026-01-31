@@ -4,11 +4,12 @@
  */
 
 import * as React from "react"
-import { logger } from "@/lib/logger"
-import { getImageBitmapCache, generateCacheKey } from "@/lib/imagebitmap-cache"
-import { getRenderingCapabilities } from "@/lib/feature-detection"
-import { IMAGEBITMAP_CACHE } from "@/lib/constants"
+
 import { useIsMobile } from "@/hooks/use-mobile"
+import { IMAGEBITMAP_CACHE } from "@/lib/constants"
+import { getRenderingCapabilities } from "@/lib/feature-detection"
+import { getImageBitmapCache, generateCacheKey } from "@/lib/imagebitmap-cache"
+import { logger } from "@/lib/logger"
 
 /**
  * Result of a render operation.

@@ -4,22 +4,22 @@
  */
 
 // External libraries
-import type { PDFDocument } from "pdf-lib"
 
 // Internal utilities
+import { yieldToBrowser } from "./batch-processing"
 import { safeRevokeObjectURL } from "./blob-url-utils"
 import { CACHE_LIMITS, PROCESSING } from "./constants"
-import { createPdfErrorInfo, PdfErrorType } from "./pdf-errors"
+import { ERROR_TEMPLATES } from "./error-formatting"
+import { logger } from "./logger"
+import { getRecommendedCacheLimit, shouldYieldToBrowser } from "./memory-utils"
 import { getPdfColor } from "./pdf-colors"
+import { createPdfErrorInfo, PdfErrorType } from "./pdf-errors"
 import { loadFileWithPreview } from "./pdf-utils"
 import { determineFileType } from "./validation-utils"
-import { logger } from "./logger"
-import { ERROR_TEMPLATES } from "./error-formatting"
-import { yieldToBrowser } from "./batch-processing"
-import { getRecommendedCacheLimit, shouldYieldToBrowser } from "./memory-utils"
 
 // Types
 import type { PdfFile, ProcessFileResult } from "./types"
+import type { PDFDocument } from "pdf-lib"
 
 /**
  * Evicts least recently used entry from cache using LRU (Least Recently Used) strategy.
@@ -176,7 +176,7 @@ export async function processFile(
     const pdfFile: PdfFile = {
       id: fileId,
       file,
-      url: url,
+      url,
       pageCount: count,
       color,
       type: fileType,

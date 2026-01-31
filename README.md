@@ -30,9 +30,11 @@
 
 A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract pages from PDF files and images with client-side processing (hosting provider may collect connection metadata). All file processing happens entirely in your browser.
 
-**App:** [pdf.helvety.com](https://pdf.helvety.com)
+**App:** [pdf.helvety.com](https://pdf.helvety.com) | **Subscribe:** [store.helvety.com](https://store.helvety.com/products/helvety-pdf)
 
 **Privacy First** - 100% Client-Side Processing. All file processing happens entirely in your browser. The application does not collect or transmit your file data (hosting provider may collect connection metadata - see Privacy Policy).
+
+Helvety PDF offers a free Basic tier with essential features, and a Pro subscription for unlimited usage and advanced features like page rotation.
 
 ## Features
 
@@ -40,13 +42,31 @@ A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract 
 - **PDF and image support** - Upload PDF files and images (PNG, JPEG, WebP, GIF, etc.)
 - **Page thumbnails preview** - Visual preview of all pages before processing
 - **Drag & drop reordering** - Easily rearrange pages by dragging thumbnails
-- **Page rotation** - Rotate individual pages by 90° increments
+- **Page rotation** - Rotate individual pages by 90° increments *(Pro)*
 - **Page deletion** - Remove unwanted pages from your documents
 - **Page extraction** - Extract individual pages as separate PDF files
 - **Multi-file merging** - Combine multiple PDF files and images into one PDF
 - **Drag & drop upload** - Intuitive file upload interface
 - **Customizable grid layout** - Adjust pages per row to accommodate different page sizes
 - **Dark & Light mode support** - Comfortable viewing in any lighting condition
+
+## Pricing
+
+Helvety PDF offers a free Basic tier and a paid Pro subscription:
+
+| Feature | Basic (Free) | Pro (CHF 4.95/month) |
+|---------|--------------|----------------------|
+| Files | Max 2 files | Unlimited |
+| Pages | Max 5 pages | Unlimited |
+| Merge files | Yes | Yes |
+| Split files | Yes | Yes |
+| Reorder pages | Yes | Yes |
+| Delete pages | Yes | Yes |
+| Extract pages | Yes | Yes |
+| Rotate pages | - | Yes |
+| Client-side processing | Yes | Yes |
+
+Subscribe at [store.helvety.com](https://store.helvety.com/products/helvety-pdf)
 
 ## How It Works
 
@@ -61,9 +81,10 @@ This project is built with modern web technologies:
 - **[Next.js 16.1.6](https://nextjs.org/)** - React framework with App Router
 - **[React 19.2.4](https://react.dev/)** - UI library
 - **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
+- **[Supabase](https://supabase.com/)** - Backend-as-a-Service (Auth & Database)
+- **[SimpleWebAuthn](https://simplewebauthn.dev/)** - WebAuthn/passkey authentication
 - **[pdf-lib](https://pdf-lib.js.org/)** - PDF manipulation and creation
 - **[pdfjs-dist](https://mozilla.github.io/pdf.js/)** - PDF rendering engine
-- **[react-pdf](https://react-pdf.org/)** - PDF viewer component
 - **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
 - **[shadcn/ui](https://ui.shadcn.com/)** - High-quality React component library
 - **[Radix UI](https://www.radix-ui.com/)** - Unstyled, accessible component primitives
@@ -75,73 +96,84 @@ This project is built with modern web technologies:
 ```
 helvety-pdf/
 ├── app/                    # Next.js App Router
+│   ├── actions/           # Server actions
+│   │   ├── passkey-auth-actions.ts # WebAuthn passkey authentication
+│   │   └── subscription-actions.ts # Subscription status queries
+│   ├── auth/callback/     # Auth callback route
+│   ├── login/             # Login page
 │   ├── globals.css        # Global styles
 │   ├── icon.svg           # App icon
 │   ├── layout.tsx         # Root layout component
 │   ├── page.tsx           # Main page component
+│   ├── page-client.tsx    # Client-side page component
 │   ├── robots.ts          # Robots.txt configuration
 │   └── sitemap.ts         # Sitemap configuration
 ├── components/            # React components
 │   ├── ui/               # shadcn/ui component library
-│   ├── navbar.tsx         # Navigation bar
+│   ├── app-switcher.tsx   # Helvety ecosystem app switcher
+│   ├── auth-provider.tsx  # Authentication context provider
+│   ├── auth-stepper.tsx   # Authentication flow stepper
 │   ├── helvety-pdf.tsx    # Main PDF management component
+│   ├── navbar.tsx         # Navigation bar
 │   ├── pdf-action-buttons.tsx   # Action buttons for PDF operations
 │   ├── pdf-image-thumbnail.tsx # Image thumbnail component
-│   ├── pdf-imagebitmap-thumbnail.tsx # ImageBitmap-based thumbnail component
+│   ├── pdf-imagebitmap-thumbnail.tsx # ImageBitmap-based thumbnail
 │   ├── pdf-page-error-boundary.tsx # Page-level error boundary
 │   ├── pdf-page-grid.tsx  # PDF page grid layout
 │   ├── pdf-page-thumbnail.tsx  # Individual page thumbnail
 │   ├── pdf-toolkit.tsx    # PDF toolkit utilities
 │   ├── theme-provider.tsx # Theme context provider
-│   └── theme-switcher.tsx # Dark/light mode switcher
+│   ├── theme-switcher.tsx # Dark/light mode switcher
+│   └── upgrade-prompt.tsx # Pro upgrade prompt dialog
 ├── hooks/                 # Custom React hooks
-│   ├── use-columns.ts     # Column layout management hook
-│   ├── use-drag-drop.ts   # Drag and drop functionality hook
-│   ├── use-error-handler.ts # Error handling hook
-│   ├── use-imagebitmap-memory.ts # ImageBitmap memory monitoring hook
-│   ├── use-mobile.ts      # Mobile device detection hook
-│   ├── use-page-drag-drop.ts # Page drag and drop functionality hook
-│   ├── use-pdf-files.ts   # PDF file management hook
-│   ├── use-pdf-page-state.ts # Page state management hook (deletions, rotations)
-│   ├── use-pdf-processing.ts # PDF processing operations hook
-│   ├── use-pdf-rendering.ts # PDF page rendering hook with ImageBitmap caching
-│   ├── use-pdf-worker.ts  # PDF worker management hook
-│   ├── use-progressive-quality.ts # Progressive quality rendering hook
-│   ├── use-screen-size.ts # Screen size detection hook
-│   └── use-thumbnail-intersection.ts # Thumbnail intersection observer hook
+│   ├── use-columns.ts     # Column layout management
+│   ├── use-drag-drop.ts   # Drag and drop functionality
+│   ├── use-error-handler.ts # Error handling
+│   ├── use-imagebitmap-memory.ts # ImageBitmap memory monitoring
+│   ├── use-mobile.ts      # Mobile device detection
+│   ├── use-page-drag-drop.ts # Page drag and drop functionality
+│   ├── use-pdf-files.ts   # PDF file management with tier limits
+│   ├── use-pdf-page-state.ts # Page state (deletions, rotations)
+│   ├── use-pdf-processing.ts # PDF processing operations
+│   ├── use-pdf-rendering.ts # PDF page rendering with caching
+│   ├── use-pdf-worker.ts  # PDF worker management
+│   ├── use-progressive-quality.ts # Progressive quality rendering
+│   ├── use-screen-size.ts # Screen size detection
+│   ├── use-subscription.ts # Subscription status hook
+│   └── use-thumbnail-intersection.ts # Thumbnail intersection observer
 ├── lib/                   # Utility functions
+│   ├── config/            # Configuration
+│   │   └── version.ts     # Build version info
+│   ├── crypto/            # Encryption utilities
+│   │   ├── encoding.ts    # Encoding helpers
+│   │   ├── passkey.ts     # Passkey encryption
+│   │   └── types.ts       # Crypto type definitions
+│   ├── supabase/          # Supabase client utilities
+│   │   ├── admin.ts       # Admin client
+│   │   ├── client.ts      # Browser client
+│   │   ├── client-factory.ts # Client factory
+│   │   └── server.ts      # Server client
+│   ├── types/             # Type definitions
+│   │   ├── entities.ts    # Entity types
+│   │   ├── index.ts       # Type exports
+│   │   └── subscription.ts # Subscription types and limits
 │   ├── batch-processing.ts # Batch processing utilities
-│   ├── blob-url-utils.ts  # Blob URL management utilities
-│   ├── comparison-utils.ts # Comparison utility functions
+│   ├── blob-url-utils.ts  # Blob URL management
 │   ├── constants.ts       # Application constants
-│   ├── error-formatting.ts # Error formatting utilities
+│   ├── env-validation.ts  # Environment variable validation
 │   ├── error-handler.ts   # Error handling utilities
-│   ├── feature-detection.ts # Browser feature detection utilities
-│   ├── file-download.ts   # File download utilities
 │   ├── file-processing.ts # File processing utilities
-│   ├── file-validation.ts # File validation utilities
-│   ├── imagebitmap-cache.ts # ImageBitmap LRU cache implementation
+│   ├── imagebitmap-cache.ts # ImageBitmap LRU cache
 │   ├── logger.ts          # Logging utilities
-│   ├── memory-utils.ts    # Memory monitoring utilities
 │   ├── page-actions.tsx   # Page action components
-│   ├── pdf-colors.ts      # PDF color utilities
-│   ├── pdf-conversion.ts  # PDF conversion utilities
-│   ├── pdf-errors.ts      # PDF error formatting
-│   ├── pdf-extraction.ts  # PDF extraction utilities
-│   ├── pdf-loading.ts     # PDF loading utilities
-│   ├── pdf-lookup-utils.ts # PDF lookup utilities
-│   ├── pdf-rotation.ts    # PDF page rotation utilities
-│   ├── pdf-utils.ts       # PDF utility functions - main entry point and re-exports
-│   ├── thumbnail-dpr.ts   # Thumbnail device pixel ratio utilities
-│   ├── timeout-utils.ts   # Timeout utility functions
-│   ├── types.ts           # TypeScript type definitions
-│   ├── utils.ts           # General utility functions
-│   └── validation-utils.ts # Validation utility functions
+│   ├── pdf-utils.ts       # PDF utilities (main entry point)
+│   ├── types.ts           # Legacy type definitions
+│   └── utils.ts           # General utilities
 ├── public/                # Static assets
-│   ├── pdf.worker.min.mjs # PDF.js worker file (auto-synced via postinstall script)
-│   ├── pdf-rendering-worker.js # Custom PDF rendering worker
+│   ├── pdf.worker.min.mjs # PDF.js worker file
+│   ├── pdf-rendering-worker.js # Custom rendering worker
 │   └── *.svg              # Logo and branding assets
-└── [config files]         # Configuration files (Next.js, TypeScript, etc.)
+└── [config files]         # Configuration files
 ```
 
 ## Architecture & Performance

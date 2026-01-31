@@ -1,25 +1,18 @@
 "use client"
 
-// React
 import * as React from "react"
 
-// Internal components
-import { PdfPageThumbnail } from "@/components/pdf-page-thumbnail"
 import { PdfActionButtons } from "@/components/pdf-action-buttons"
 import { PageErrorBoundary } from "@/components/pdf-page-error-boundary"
+import { PdfPageThumbnail } from "@/components/pdf-page-thumbnail"
 import { Badge } from "@/components/ui/badge"
-
-// Internal utilities
-import { cn } from "@/lib/utils"
+import { usePageDragDrop } from "@/hooks/use-page-drag-drop"
+import { areArraysEqual, areSetsEqual, areRotationsEqual } from "@/lib/comparison-utils"
+import { createPageActions } from "@/lib/page-actions"
 import { addOklchAlpha } from "@/lib/pdf-colors"
 import { createPageMap, createFileMap, createFileUrlMap } from "@/lib/pdf-lookup-utils"
-import { createPageActions } from "@/lib/page-actions"
-import { areArraysEqual, areSetsEqual, areRotationsEqual } from "@/lib/comparison-utils"
+import { cn } from "@/lib/utils"
 
-// Custom hooks
-import { usePageDragDrop } from "@/hooks/use-page-drag-drop"
-
-// Types
 import type { PdfFile, UnifiedPage } from "@/lib/types"
 
 interface PdfPageGridProps {
@@ -35,6 +28,8 @@ interface PdfPageGridProps {
   readonly onExtract: (unifiedPageNumber: number) => void
   readonly isProcessing: boolean
   readonly columns?: number
+  /** Whether rotation is allowed (Pro feature) */
+  readonly canRotate?: boolean
 }
 
 function PdfPageGridComponent({
@@ -50,6 +45,7 @@ function PdfPageGridComponent({
   onExtract,
   isProcessing,
   columns,
+  canRotate = true,
 }: PdfPageGridProps): React.JSX.Element | null {
   // Track error boundary retry keys for each page
   const errorRetryKeysRef = React.useRef<Map<number, number>>(new Map())
@@ -190,6 +186,7 @@ function PdfPageGridComponent({
           hasRotation: hasUserRotation,
           rotation: userRotation,
           isProcessing,
+          canRotate,
           onMoveUp: handleMoveUp,
           onMoveDown: handleMoveDown,
           onMoveLeft: handleMoveUp,

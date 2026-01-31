@@ -2,23 +2,37 @@
 import * as React from "react"
 
 // External libraries
-import type { PDFDocument } from "pdf-lib"
 
 // Internal utilities
-import { convertImageToPdf } from "@/lib/pdf-conversion"
-import { loadPdfFromFile } from "@/lib/pdf-loading"
-import { validateFiles, generateUniqueFileName } from "@/lib/validation-utils"
-import { formatValidationErrors } from "@/lib/error-formatting"
-import { processFile } from "@/lib/file-processing"
-import { safeRevokeObjectURL } from "@/lib/blob-url-utils"
-import { logger } from "@/lib/logger"
-import { FILE_LIMITS } from "@/lib/constants"
 import { isMobileDevice } from "@/hooks/use-mobile"
 import { yieldToBrowserIfNeeded } from "@/lib/batch-processing"
+import { safeRevokeObjectURL } from "@/lib/blob-url-utils"
+import { FILE_LIMITS } from "@/lib/constants"
+import { formatValidationErrors } from "@/lib/error-formatting"
+import { processFile } from "@/lib/file-processing"
+import { logger } from "@/lib/logger"
+import { convertImageToPdf } from "@/lib/pdf-conversion"
 import { createPdfErrorInfo, PdfErrorType } from "@/lib/pdf-errors"
+import { loadPdfFromFile } from "@/lib/pdf-loading"
+import { validateFiles, generateUniqueFileName } from "@/lib/validation-utils"
 
 // Types
 import type { PdfFile, UnifiedPage } from "@/lib/types"
+import type { PDFDocument } from "pdf-lib"
+
+/**
+ * Options for the usePdfFiles hook
+ */
+interface UsePdfFilesOptions {
+  /** Maximum number of files allowed (from subscription tier) */
+  maxFiles?: number
+  /** Maximum total pages allowed (from subscription tier) */
+  maxPages?: number
+  /** Callback when file limit is reached */
+  onFileLimitReached?: () => void
+  /** Callback when page limit is reached */
+  onPageLimitReached?: () => void
+}
 
 interface UsePdfFilesReturn {
   readonly pdfFiles: ReadonlyArray<PdfFile>
@@ -31,6 +45,10 @@ interface UsePdfFilesReturn {
   readonly removeFile: (fileId: string) => void
   readonly clearAll: () => void
   readonly getCachedPdf: (fileId: string, file: File, fileType: 'pdf' | 'image') => Promise<PDFDocument>
+  /** Check if more files can be added */
+  readonly canAddMoreFiles: (count?: number) => boolean
+  /** Get remaining file slots */
+  readonly remainingFileSlots: number
 }
 
 /** Maximum number of retry attempts for transient failures */
@@ -165,9 +183,17 @@ function createUnifiedPages(files: ReadonlyArray<PdfFile>): UnifiedPage[] {
  * Custom hook for managing PDF files and their associated state.
  * Handles file validation, caching, and unified page management.
  * 
+ * @param options - Optional configuration including tier-based limits
  * @returns Object containing file state, handlers, and utilities
  */
-export function usePdfFiles(): UsePdfFilesReturn {
+export function usePdfFiles(options: UsePdfFilesOptions = {}): UsePdfFilesReturn {
+  const { 
+    maxFiles = Infinity, 
+    maxPages = Infinity,
+    onFileLimitReached,
+    onPageLimitReached,
+  } = options
+  
   const [pdfFiles, setPdfFiles] = React.useState<PdfFile[]>([])
   const [unifiedPages, setUnifiedPages] = React.useState<UnifiedPage[]>([])
   const [pageOrder, setPageOrder] = React.useState<number[]>([])
@@ -175,6 +201,20 @@ export function usePdfFiles(): UsePdfFilesReturn {
   const lastUploadTimeRef = React.useRef<number>(0)
   // Use ref to store current pdfFiles to avoid recreating validateAndAddFiles callback
   const pdfFilesRef = React.useRef<PdfFile[]>(pdfFiles)
+  
+  // Store callbacks in refs to avoid recreating validateAndAddFiles
+  const onFileLimitReachedRef = React.useRef(onFileLimitReached)
+  const onPageLimitReachedRef = React.useRef(onPageLimitReached)
+  const maxFilesRef = React.useRef(maxFiles)
+  const maxPagesRef = React.useRef(maxPages)
+  
+  // Keep refs in sync
+  React.useEffect(() => {
+    onFileLimitReachedRef.current = onFileLimitReached
+    onPageLimitReachedRef.current = onPageLimitReached
+    maxFilesRef.current = maxFiles
+    maxPagesRef.current = maxPages
+  }, [onFileLimitReached, onPageLimitReached, maxFiles, maxPages])
 
   /**
    * Gets a cached PDF document or loads it if not in cache.
@@ -248,7 +288,7 @@ export function usePdfFiles(): UsePdfFilesReturn {
   /**
    * Validates and adds PDF files and images to the application state.
    * 
-   * Performs validation checks, rate limiting, and progressive processing
+   * Performs validation checks, rate limiting, tier-based limits, and progressive processing
    * with retry logic for transient failures.
    * 
    * @param files - FileList or array of File objects to validate and add
@@ -261,9 +301,28 @@ export function usePdfFiles(): UsePdfFilesReturn {
     const fileArray = Array.from(files)
     const isMobile = isMobileDevice()
     const currentPdfFiles = pdfFilesRef.current
+    const currentMaxFiles = maxFilesRef.current
 
     // Enforce rate limiting between uploads
     await enforceRateLimiting(lastUploadTimeRef)
+
+    // Check tier-based file limit BEFORE validation
+    if (currentMaxFiles !== Infinity) {
+      const currentFileCount = currentPdfFiles.length
+      const remainingSlots = currentMaxFiles - currentFileCount
+      
+      if (remainingSlots <= 0) {
+        onError(`File limit reached. You can upload up to ${currentMaxFiles} files with your current plan. Upgrade to Pro for unlimited files.`)
+        onFileLimitReachedRef.current?.()
+        return
+      }
+      
+      if (fileArray.length > remainingSlots) {
+        onError(`You can only add ${remainingSlots} more file${remainingSlots !== 1 ? 's' : ''} with your current plan. Upgrade to Pro for unlimited files.`)
+        onFileLimitReachedRef.current?.()
+        return
+      }
+    }
 
     // Validate files before processing
     const validationResult = validateFiles(fileArray, currentPdfFiles)
@@ -311,8 +370,26 @@ export function usePdfFiles(): UsePdfFilesReturn {
       }
     }
 
-    // Update state with successfully processed files
-    if (pdfFilesToAdd.length > 0) {
+    // Check page limit before adding files
+    const currentMaxPages = maxPagesRef.current
+    if (currentMaxPages !== Infinity && pdfFilesToAdd.length > 0) {
+      const currentPageCount = currentPdfFiles.reduce((sum, f) => sum + f.pageCount, 0)
+      const newPageCount = pdfFilesToAdd.reduce((sum, f) => sum + f.pageCount, 0)
+      const totalPages = currentPageCount + newPageCount
+      
+      if (totalPages > currentMaxPages) {
+        const remainingPages = currentMaxPages - currentPageCount
+        validationErrors.push(
+          `Page limit exceeded. You can add up to ${remainingPages} more page${remainingPages !== 1 ? 's' : ''} with your current plan (${currentMaxPages} total). Upgrade to Pro for unlimited pages.`
+        )
+        onPageLimitReachedRef.current?.()
+        // Don't add files that would exceed the limit
+        // In the future, we could add partial files or trim pages
+      }
+    }
+
+    // Update state with successfully processed files (only if within limits)
+    if (pdfFilesToAdd.length > 0 && validationErrors.length === 0) {
       setPdfFiles((prev) => [...prev, ...pdfFilesToAdd])
     }
 
@@ -386,6 +463,22 @@ export function usePdfFiles(): UsePdfFilesReturn {
     setPageOrder([])
   }, [])
 
+  /**
+   * Check if more files can be added within the tier limit
+   */
+  const canAddMoreFiles = React.useCallback((count: number = 1): boolean => {
+    if (maxFiles === Infinity) return true
+    return pdfFiles.length + count <= maxFiles
+  }, [pdfFiles.length, maxFiles])
+
+  /**
+   * Get remaining file slots based on tier limit
+   */
+  const remainingFileSlots = React.useMemo((): number => {
+    if (maxFiles === Infinity) return Infinity
+    return Math.max(0, maxFiles - pdfFiles.length)
+  }, [pdfFiles.length, maxFiles])
+
   return {
     pdfFiles,
     setPdfFiles,
@@ -397,6 +490,8 @@ export function usePdfFiles(): UsePdfFilesReturn {
     removeFile,
     clearAll,
     getCachedPdf,
+    canAddMoreFiles,
+    remainingFileSlots,
   }
 }
 

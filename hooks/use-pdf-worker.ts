@@ -4,8 +4,9 @@
  */
 
 import * as React from "react"
-import { logger } from "@/lib/logger"
+
 import { PDF_RENDER } from "@/lib/constants"
+import { logger } from "@/lib/logger"
 
 // Shared Promise for worker initialization (resolves when worker is ready)
 let workerInitPromise: Promise<void> | null = null

@@ -4,8 +4,9 @@
  * O(n) Array.find() operations to O(1) Map lookups.
  */
 
-import type { PdfFile, UnifiedPage } from "./types"
 import { validateArray } from "./validation-utils"
+
+import type { PdfFile, UnifiedPage } from "./types"
 
 /**
  * Creates a map of unified page numbers to UnifiedPage objects for O(1) lookups.
