@@ -23,6 +23,9 @@ import { cn } from "@/lib/utils";
 
 import type { PdfFile, UnifiedPage } from "@/lib/types";
 
+/**
+ *
+ */
 interface PdfPageGridProps {
   readonly pdfFiles: ReadonlyArray<PdfFile>;
   readonly unifiedPages: ReadonlyArray<UnifiedPage>;
@@ -40,6 +43,9 @@ interface PdfPageGridProps {
   readonly canRotate?: boolean;
 }
 
+/**
+ *
+ */
 function PdfPageGridComponent({
   pdfFiles,
   unifiedPages,

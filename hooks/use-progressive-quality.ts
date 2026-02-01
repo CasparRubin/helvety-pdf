@@ -2,12 +2,18 @@ import * as React from "react";
 
 import { QUALITY_UPGRADE } from "@/lib/constants";
 
+/**
+ *
+ */
 interface UseProgressiveQualityParams {
   readonly isVisible: boolean;
   readonly shouldUnmount: boolean;
   readonly fileType: "pdf" | "image";
 }
 
+/**
+ *
+ */
 interface UseProgressiveQualityReturn {
   readonly isHighQuality: boolean;
   readonly setIsHighQuality: React.Dispatch<React.SetStateAction<boolean>>;

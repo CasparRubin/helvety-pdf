@@ -2,6 +2,9 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ *
+ */
 function Card({
   className,
   size = "default",
@@ -22,6 +25,9 @@ function Card({
   );
 }
 
+/**
+ *
+ */
 function CardHeader({
   className,
   ...props
@@ -38,6 +44,9 @@ function CardHeader({
   );
 }
 
+/**
+ *
+ */
 function CardTitle({
   className,
   ...props
@@ -54,6 +63,9 @@ function CardTitle({
   );
 }
 
+/**
+ *
+ */
 function CardDescription({
   className,
   ...props
@@ -67,6 +79,9 @@ function CardDescription({
   );
 }
 
+/**
+ *
+ */
 function CardAction({
   className,
   ...props
@@ -83,6 +98,9 @@ function CardAction({
   );
 }
 
+/**
+ *
+ */
 function CardContent({
   className,
   ...props
@@ -96,6 +114,9 @@ function CardContent({
   );
 }
 
+/**
+ *
+ */
 function CardFooter({
   className,
   ...props

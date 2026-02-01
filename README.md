@@ -2,7 +2,7 @@
 
 ![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black?style=flat-square&logo=next.js)
 ![React](https://img.shields.io/badge/React-19.2.4-61DAFB?style=flat-square&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue?style=flat-square&logo=typescript)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
 ## Demo
@@ -119,8 +119,9 @@ Passkey encryption requires a modern browser with WebAuthn PRF support:
 - Google Chrome 128+
 - Microsoft Edge 128+
 - Safari 18+
+- Firefox 139+ (desktop only)
 
-**Note:** Firefox is not currently supported for encryption passkeys due to limited PRF extension support.
+**Note:** Firefox for Android does not support the PRF extension.
 
 ## Tech Stack
 
@@ -165,6 +166,7 @@ helvety-pdf/
 │   ├── ui/               # shadcn/ui component library
 │   │   └── index.ts      # Barrel exports
 │   ├── app-switcher.tsx   # Helvety ecosystem app switcher
+│   ├── auth-token-handler.tsx # Auth token refresh handler
 │   ├── encryption-gate.tsx # Encryption setup/unlock gate
 │   ├── encryption-unlock.tsx # Encryption passkey unlock
 │   ├── helvety-pdf.tsx    # Main PDF management component
@@ -176,6 +178,7 @@ helvety-pdf/
 │   ├── pdf-page-grid.tsx  # PDF page grid layout
 │   ├── pdf-page-thumbnail.tsx  # Individual page thumbnail
 │   ├── pdf-toolkit.tsx    # PDF toolkit utilities
+│   ├── subscription-provider.tsx # Subscription context provider
 │   ├── theme-provider.tsx # Theme context provider
 │   ├── theme-switcher.tsx # Dark/light mode switcher
 │   └── upgrade-prompt.tsx # Pro upgrade prompt dialog
@@ -202,7 +205,12 @@ helvety-pdf/
 │   │   └── version.ts     # Build version info
 │   ├── crypto/            # Encryption utilities
 │   │   ├── encoding.ts    # Encoding helpers
+│   │   ├── encryption-context.tsx # Encryption context provider
+│   │   ├── encryption.ts  # Encryption/decryption functions
+│   │   ├── index.ts       # Barrel exports
+│   │   ├── key-storage.ts # IndexedDB key storage
 │   │   ├── passkey.ts     # Passkey encryption
+│   │   ├── prf-key-derivation.ts # PRF key derivation
 │   │   └── types.ts       # Crypto type definitions
 │   ├── supabase/          # Supabase client utilities
 │   │   ├── admin.ts       # Admin client
@@ -216,15 +224,31 @@ helvety-pdf/
 │   │   └── subscription.ts # Subscription types and limits
 │   ├── batch-processing.ts # Batch processing utilities
 │   ├── blob-url-utils.ts  # Blob URL management
+│   ├── comparison-utils.ts # Array/object comparison utilities
 │   ├── constants.ts       # Application constants
 │   ├── env-validation.ts  # Environment variable validation
+│   ├── error-formatting.ts # Error message formatting
 │   ├── error-handler.ts   # Error handling utilities
+│   ├── feature-detection.ts # Browser feature detection
+│   ├── file-download.ts   # File download utilities
 │   ├── file-processing.ts # File processing utilities
+│   ├── file-validation.ts # File type/size validation
 │   ├── imagebitmap-cache.ts # ImageBitmap LRU cache
 │   ├── logger.ts          # Logging utilities
+│   ├── memory-utils.ts    # Memory monitoring utilities
 │   ├── page-actions.tsx   # Page action components
+│   ├── pdf-colors.ts      # PDF file color assignments
+│   ├── pdf-conversion.ts  # PDF conversion utilities
+│   ├── pdf-errors.ts      # PDF error handling
+│   ├── pdf-extraction.ts  # Page extraction utilities
+│   ├── pdf-loading.ts     # PDF document loading
+│   ├── pdf-lookup-utils.ts # PDF lookup utilities
+│   ├── pdf-rotation.ts    # Page rotation utilities
 │   ├── pdf-utils.ts       # PDF utilities (main entry point)
-│   └── utils.ts           # General utilities
+│   ├── thumbnail-dpr.ts   # Thumbnail DPR calculation
+│   ├── timeout-utils.ts   # Timeout/promise utilities
+│   ├── utils.ts           # General utilities
+│   └── validation-utils.ts # Input validation utilities
 ├── e2e/                   # End-to-end tests (Playwright)
 ├── public/                # Static assets
 │   ├── pdf.worker.min.mjs # PDF.js worker file
@@ -236,6 +260,69 @@ helvety-pdf/
 └── [config files]         # Other configuration files
 ```
 
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18.17 or later
+- npm 9 or later
+- A Supabase project (for authentication)
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/helvety/helvety-pdf.git
+   cd helvety-pdf
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables (see [Environment Variables](#environment-variables) below)
+
+4. Run the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Environment Variables
+
+Copy `env.template` to `.env.local` and fill in the required values:
+
+```bash
+cp env.template .env.local
+```
+
+### Required Variables
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_PROJECT_URL` | Your Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase anon/publishable key (safe for browser) |
+| `SUPABASE_SECRET_KEY` | Supabase service role key (server-only, never expose to client) |
+
+See `env.template` for the full list with descriptions.
+
+## Configuration
+
+### Supabase Setup
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Configure Row Level Security (RLS) policies
+3. Enable the required auth providers
+
+### Authentication
+
+Authentication is handled by the centralized Helvety Auth service. Ensure `auth.helvety.com` is configured and running. The PDF app uses cross-subdomain session cookies for SSO.
+
 ## Architecture & Performance
 
 This application is built with performance and code quality in mind:
@@ -246,6 +333,32 @@ This application is built with performance and code quality in mind:
 - **Strict TypeScript** - Comprehensive type safety with `noUncheckedIndexedAccess`, `noImplicitReturns`, `noUnusedLocals`, and other strict compiler options
 - **Error Handling** - Centralized error handling with detailed context and recovery strategies
 - **Code Organization** - Modular architecture with extracted utilities and reusable components
+
+## Testing
+
+This project uses Vitest for unit tests and Playwright for end-to-end tests.
+
+```bash
+# Run unit tests in watch mode
+npm run test
+
+# Run unit tests with Vitest UI
+npm run test:ui
+
+# Run unit tests once
+npm run test:run
+
+# Run with coverage
+npm run test:coverage
+
+# Run E2E tests
+npm run test:e2e
+
+# Run E2E tests with UI
+npm run test:e2e:ui
+```
+
+See `__tests__/README.md` for testing patterns and conventions.
 
 ## Developer
 

@@ -13,6 +13,9 @@ import {
 
 import type { TierLimits } from "@/lib/types/subscription";
 
+/**
+ *
+ */
 interface UpgradePromptProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -46,6 +49,9 @@ const PRO_FEATURES = [
   "Priority support",
 ];
 
+/**
+ *
+ */
 export function UpgradePrompt({
   open,
   onOpenChange,

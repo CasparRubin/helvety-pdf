@@ -34,6 +34,9 @@ import { cn } from "@/lib/utils";
 import type { PdfFile } from "@/lib/types";
 import type { SubscriptionTier, TierLimits } from "@/lib/types/subscription";
 
+/**
+ *
+ */
 interface PdfToolkitProps {
   readonly pdfFiles: ReadonlyArray<PdfFile>;
   readonly totalPages: number;
@@ -59,6 +62,9 @@ interface PdfToolkitProps {
 /** Tailwind lg breakpoint in pixels */
 const LG_BREAKPOINT = 1024;
 
+/**
+ *
+ */
 function PdfToolkitComponent({
   pdfFiles,
   totalPages,

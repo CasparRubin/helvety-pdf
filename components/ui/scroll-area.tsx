@@ -5,12 +5,18 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ *
+ */
 interface ScrollAreaProps extends React.ComponentProps<
   typeof ScrollAreaPrimitive.Root
 > {
   viewportClassName?: string;
 }
 
+/**
+ *
+ */
 function ScrollArea({
   className,
   viewportClassName,
@@ -38,6 +44,9 @@ function ScrollArea({
   );
 }
 
+/**
+ *
+ */
 function ScrollBar({
   className,
   orientation = "vertical",

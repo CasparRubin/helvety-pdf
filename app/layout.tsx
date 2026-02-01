@@ -112,6 +112,9 @@ export const metadata: Metadata = {
   category: "productivity",
 };
 
+/**
+ *
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

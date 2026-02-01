@@ -13,6 +13,9 @@ import {
 } from "@/components/ui/card";
 import { useEncryptionContext, type PRFKeyParams } from "@/lib/crypto";
 
+/**
+ *
+ */
 interface EncryptionUnlockProps {
   userId: string;
   /** PRF-based params for passkey unlock */

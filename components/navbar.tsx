@@ -59,6 +59,9 @@ import {
 import { redirectToLogout } from "@/lib/auth-redirect";
 import { VERSION } from "@/lib/config/version";
 
+/**
+ *
+ */
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);

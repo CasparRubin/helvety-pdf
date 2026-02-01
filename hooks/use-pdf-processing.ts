@@ -25,12 +25,18 @@ import { formatTimestamp } from "@/lib/utils";
 // Types
 import type { PdfFile, UnifiedPage } from "@/lib/types";
 
+/**
+ *
+ */
 interface UsePdfProcessingReturn {
   readonly isProcessing: boolean;
   readonly extractPage: (unifiedPageNumber: number) => Promise<void>;
   readonly downloadMerged: () => Promise<void>;
 }
 
+/**
+ *
+ */
 interface UsePdfProcessingParams {
   readonly pdfFiles: ReadonlyArray<PdfFile>;
   readonly unifiedPages: ReadonlyArray<UnifiedPage>;

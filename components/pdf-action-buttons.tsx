@@ -12,6 +12,9 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+/**
+ *
+ */
 interface ActionButton {
   icon: React.ReactNode;
   onClick: () => void;
@@ -23,12 +26,18 @@ interface ActionButton {
   className?: string;
 }
 
+/**
+ *
+ */
 interface PdfActionButtonsProps {
   actions: ActionButton[];
   showGrip?: boolean;
   className?: string;
 }
 
+/**
+ *
+ */
 function PdfActionButtonsComponent({
   actions,
   showGrip = false,

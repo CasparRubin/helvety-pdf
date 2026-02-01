@@ -1,5 +1,8 @@
 import * as React from "react";
 
+/**
+ *
+ */
 interface UseDragDropReturn {
   readonly isDragging: boolean;
   readonly handleDragEnter: (e: React.DragEvent) => void;

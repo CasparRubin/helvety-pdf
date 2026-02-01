@@ -38,6 +38,14 @@ const nextConfig: NextConfig = {
       },
       {
         key: "Content-Security-Policy",
+        // Note on 'unsafe-eval' and 'unsafe-inline':
+        // - 'unsafe-eval': Required for PDF.js to parse and render PDF documents.
+        //   PDF.js uses eval() for font parsing and some PDF operations.
+        // - 'unsafe-inline': Required for Next.js styled-jsx and some React patterns.
+        // These are necessary tradeoffs for functionality. XSS is mitigated through:
+        // - Strict React JSX escaping (no dangerouslySetInnerHTML)
+        // - Input validation on all user data
+        // - HTTPOnly cookies for authentication
         value: [
           "default-src 'self'",
           "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",

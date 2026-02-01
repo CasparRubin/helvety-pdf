@@ -4,6 +4,9 @@ import * as React from "react";
 // Internal utilities
 import { normalizeRotation } from "@/lib/pdf-rotation";
 
+/**
+ *
+ */
 interface UsePdfPageStateReturn {
   readonly deletedPages: ReadonlySet<number>;
   readonly pageRotations: Readonly<Record<number, number>>;

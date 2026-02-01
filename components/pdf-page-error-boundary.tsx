@@ -7,6 +7,9 @@ import * as React from "react";
 
 import { logger } from "@/lib/logger";
 
+/**
+ *
+ */
 interface PageErrorBoundaryProps {
   /** Child components to render */
   readonly children: React.ReactNode;
@@ -16,6 +19,9 @@ interface PageErrorBoundaryProps {
   readonly retryKey: number;
 }
 
+/**
+ *
+ */
 interface PageErrorBoundaryState {
   /** Whether an error has occurred */
   readonly hasError: boolean;

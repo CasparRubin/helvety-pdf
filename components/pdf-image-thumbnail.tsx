@@ -6,6 +6,9 @@ import * as React from "react";
 // Internal utilities
 import { ROTATION_ANGLES } from "@/lib/constants";
 
+/**
+ *
+ */
 interface PdfImageThumbnailProps {
   readonly fileUrl: string;
   readonly pageNumber: number;

@@ -34,6 +34,9 @@ interface UsePdfFilesOptions {
   onPageLimitReached?: () => void;
 }
 
+/**
+ *
+ */
 interface UsePdfFilesReturn {
   readonly pdfFiles: ReadonlyArray<PdfFile>;
   readonly setPdfFiles: React.Dispatch<React.SetStateAction<PdfFile[]>>;

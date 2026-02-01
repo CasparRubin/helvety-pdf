@@ -31,6 +31,9 @@ const Page = dynamic(() => import("react-pdf").then((mod) => mod.Page), {
   ssr: false,
 });
 
+/**
+ *
+ */
 interface PdfPageThumbnailProps {
   fileUrl: string;
   pageNumber: number;
@@ -43,6 +46,9 @@ interface PdfPageThumbnailProps {
   totalPages?: number;
 }
 
+/**
+ *
+ */
 function PdfPageThumbnailComponent({
   fileUrl,
   pageNumber,
