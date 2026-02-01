@@ -8,6 +8,7 @@ import {
   FileText,
   Menu,
   Info,
+  LogIn,
   LogOut,
   Crown,
   User,
@@ -56,16 +57,31 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { redirectToLogout } from "@/lib/auth-redirect";
+import { redirectToLogin, redirectToLogout } from "@/lib/auth-redirect";
 import { VERSION } from "@/lib/config/version";
 
 /**
+ * Main navigation bar component for helvety-pdf
  *
+ * Features:
+ * - App switcher for navigating between Helvety ecosystem apps
+ * - Logo and branding with "PDF" label
+ * - Navigation links (Impressum, Privacy, Terms)
+ * - About dialog with version info
+ * - GitHub link
+ * - Theme switcher (dark/light mode)
+ * - Login button (shown when user is not authenticated)
+ * - Profile menu with subscription tier, upgrade prompt, and logout (shown when authenticated)
+ * - Mobile responsive with burger menu including login and user info sections
  */
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const { isAuthenticated, isPro, isLoading } = useSubscriptionContext();
+
+  const handleLogin = () => {
+    redirectToLogin();
+  };
 
   const handleLogout = () => {
     // Redirect to centralized auth service for logout
@@ -191,6 +207,14 @@ export function Navbar() {
           </TooltipProvider>
 
           <ThemeSwitcher />
+
+          {/* Login button - only show when not authenticated */}
+          {!isAuthenticated && !isLoading && (
+            <Button variant="default" size="sm" onClick={handleLogin}>
+              <LogIn className="mr-2 h-4 w-4" />
+              Sign in
+            </Button>
+          )}
 
           {/* User profile popover - only show when authenticated */}
           {isAuthenticated && !isLoading && (
@@ -334,6 +358,20 @@ export function Navbar() {
                 <SheetTitle>Navigation</SheetTitle>
               </SheetHeader>
               <nav className="mt-6 flex flex-col gap-2">
+                {/* Login button in mobile menu */}
+                {!isAuthenticated && !isLoading && (
+                  <Button
+                    variant="default"
+                    className="mb-2 w-full justify-start"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleLogin();
+                    }}
+                  >
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign in
+                  </Button>
+                )}
                 {/* User info section in mobile menu */}
                 {isAuthenticated && !isLoading && (
                   <>
