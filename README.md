@@ -116,12 +116,18 @@ User data is protected with client-side encryption using the WebAuthn PRF extens
 
 Passkey encryption requires a modern browser with WebAuthn PRF support:
 
-- Google Chrome 128+
-- Microsoft Edge 128+
-- Safari 18+
+**Desktop:**
+- Chrome 128+ or Edge 128+
+- Safari 18+ on Mac
 - Firefox 139+ (desktop only)
 
+**Mobile:**
+- iPhone with iOS 18+
+- Android 14+ with Chrome
+
 **Note:** Firefox for Android does not support the PRF extension.
+
+**Legal Pages:** Privacy Policy, Terms of Service, and Impressum are hosted centrally on [helvety.com](https://helvety.com) and linked from the navbar.
 
 ## Tech Stack
 
@@ -142,187 +148,6 @@ This project is built with modern web technologies:
 - **[Vitest](https://vitest.dev/)** - Unit and integration testing
 - **[Playwright](https://playwright.dev/)** - End-to-end testing
 
-## Project Structure
-
-```
-helvety-pdf/
-├── __tests__/              # Unit and integration tests
-├── .github/
-│   └── workflows/          # CI/CD workflows
-│       └── test.yml        # Automated testing
-├── app/                    # Next.js App Router
-│   ├── actions/           # Server actions
-│   │   ├── encryption-actions.ts # Encryption parameter management
-│   │   └── subscription-actions.ts # Subscription status queries
-│   ├── auth/callback/     # Session establishment callback
-│   ├── globals.css        # Global styles
-│   ├── icon.svg           # App icon
-│   ├── layout.tsx         # Root layout component
-│   ├── page.tsx           # Main page (redirects to auth if unauthenticated)
-│   ├── page-client.tsx    # Client-side page component
-│   ├── robots.ts          # Robots.txt configuration
-│   └── sitemap.ts         # Sitemap configuration
-├── components/            # React components
-│   ├── ui/               # shadcn/ui component library
-│   │   └── index.ts      # Barrel exports
-│   ├── app-switcher.tsx   # Helvety ecosystem app switcher
-│   ├── auth-token-handler.tsx # Auth token refresh handler
-│   ├── encryption-gate.tsx # Encryption setup/unlock gate
-│   ├── encryption-unlock.tsx # Encryption passkey unlock
-│   ├── helvety-pdf.tsx    # Main PDF management component
-│   ├── navbar.tsx         # Navigation bar
-│   ├── pdf-action-buttons.tsx   # Action buttons for PDF operations
-│   ├── pdf-image-thumbnail.tsx # Image thumbnail component
-│   ├── pdf-imagebitmap-thumbnail.tsx # ImageBitmap-based thumbnail
-│   ├── pdf-page-error-boundary.tsx # Page-level error boundary
-│   ├── pdf-page-grid.tsx  # PDF page grid layout
-│   ├── pdf-page-thumbnail.tsx  # Individual page thumbnail
-│   ├── pdf-toolkit.tsx    # PDF toolkit utilities
-│   ├── subscription-provider.tsx # Subscription context provider
-│   ├── theme-provider.tsx # Theme context provider
-│   ├── theme-switcher.tsx # Dark/light mode switcher
-│   └── upgrade-prompt.tsx # Pro upgrade prompt dialog
-├── hooks/                 # Custom React hooks
-│   ├── index.ts           # Barrel exports
-│   ├── use-columns.ts     # Column layout management
-│   ├── use-drag-drop.ts   # Drag and drop functionality
-│   ├── use-error-handler.ts # Error handling
-│   ├── use-imagebitmap-memory.ts # ImageBitmap memory monitoring
-│   ├── use-mobile.ts      # Mobile device detection
-│   ├── use-page-drag-drop.ts # Page drag and drop functionality
-│   ├── use-pdf-files.ts   # PDF file management with tier limits
-│   ├── use-pdf-page-state.ts # Page state (deletions, rotations)
-│   ├── use-pdf-processing.ts # PDF processing operations
-│   ├── use-pdf-rendering.ts # PDF page rendering with caching
-│   ├── use-pdf-worker.ts  # PDF worker management
-│   ├── use-progressive-quality.ts # Progressive quality rendering
-│   ├── use-screen-size.ts # Screen size detection
-│   ├── use-subscription.ts # Subscription status hook
-│   └── use-thumbnail-intersection.ts # Thumbnail intersection observer
-├── lib/                   # Utility functions
-│   ├── auth-redirect.ts   # Auth service redirect utilities
-│   ├── config/            # Configuration
-│   │   └── version.ts     # Build version info
-│   ├── crypto/            # Encryption utilities
-│   │   ├── encoding.ts    # Encoding helpers
-│   │   ├── encryption-context.tsx # Encryption context provider
-│   │   ├── encryption.ts  # Encryption/decryption functions
-│   │   ├── index.ts       # Barrel exports
-│   │   ├── key-storage.ts # IndexedDB key storage
-│   │   ├── passkey.ts     # Passkey encryption
-│   │   ├── prf-key-derivation.ts # PRF key derivation
-│   │   └── types.ts       # Crypto type definitions
-│   ├── supabase/          # Supabase client utilities
-│   │   ├── admin.ts       # Admin client
-│   │   ├── client.ts      # Browser client
-│   │   ├── client-factory.ts # Client factory
-│   │   └── server.ts      # Server client
-│   ├── types/             # Type definitions
-│   │   ├── entities.ts    # Entity types
-│   │   ├── index.ts       # Barrel exports
-│   │   ├── pdf.ts         # PDF-specific types
-│   │   └── subscription.ts # Subscription types and limits
-│   ├── batch-processing.ts # Batch processing utilities
-│   ├── blob-url-utils.ts  # Blob URL management
-│   ├── comparison-utils.ts # Array/object comparison utilities
-│   ├── constants.ts       # Application constants
-│   ├── env-validation.ts  # Environment variable validation
-│   ├── error-formatting.ts # Error message formatting
-│   ├── error-handler.ts   # Error handling utilities
-│   ├── feature-detection.ts # Browser feature detection
-│   ├── file-download.ts   # File download utilities
-│   ├── file-processing.ts # File processing utilities
-│   ├── file-validation.ts # File type/size validation
-│   ├── imagebitmap-cache.ts # ImageBitmap LRU cache
-│   ├── logger.ts          # Logging utilities
-│   ├── memory-utils.ts    # Memory monitoring utilities
-│   ├── page-actions.tsx   # Page action components
-│   ├── pdf-colors.ts      # PDF file color assignments
-│   ├── pdf-conversion.ts  # PDF conversion utilities
-│   ├── pdf-errors.ts      # PDF error handling
-│   ├── pdf-extraction.ts  # Page extraction utilities
-│   ├── pdf-loading.ts     # PDF document loading
-│   ├── pdf-lookup-utils.ts # PDF lookup utilities
-│   ├── pdf-rotation.ts    # Page rotation utilities
-│   ├── pdf-utils.ts       # PDF utilities (main entry point)
-│   ├── thumbnail-dpr.ts   # Thumbnail DPR calculation
-│   ├── timeout-utils.ts   # Timeout/promise utilities
-│   ├── utils.ts           # General utilities
-│   └── validation-utils.ts # Input validation utilities
-├── e2e/                   # End-to-end tests (Playwright)
-├── public/                # Static assets
-│   ├── pdf.worker.min.mjs # PDF.js worker file
-│   ├── pdf-rendering-worker.js # Custom rendering worker
-│   └── *.svg              # Logo and branding assets
-├── vitest.config.ts       # Vitest configuration
-├── vitest.setup.ts        # Test setup
-├── playwright.config.ts   # Playwright E2E configuration
-└── [config files]         # Other configuration files
-```
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18.17 or later
-- npm 9 or later
-- A Supabase project (for authentication)
-
-### Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/helvety/helvety-pdf.git
-   cd helvety-pdf
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables (see [Environment Variables](#environment-variables) below)
-
-4. Run the development server:
-
-   ```bash
-   npm run dev
-   ```
-
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## Environment Variables
-
-Copy `env.template` to `.env.local` and fill in the required values:
-
-```bash
-cp env.template .env.local
-```
-
-### Required Variables
-
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_PROJECT_URL` | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase anon/publishable key (safe for browser) |
-| `SUPABASE_SECRET_KEY` | Supabase service role key (server-only, never expose to client) |
-
-See `env.template` for the full list with descriptions.
-
-## Configuration
-
-### Supabase Setup
-
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Configure Row Level Security (RLS) policies
-3. Enable the required auth providers
-
-### Authentication
-
-Authentication is handled by the centralized Helvety Auth service. Ensure `auth.helvety.com` is configured and running. The PDF app uses cross-subdomain session cookies for SSO.
-
 ## Architecture & Performance
 
 This application is built with performance and code quality in mind:
@@ -334,32 +159,6 @@ This application is built with performance and code quality in mind:
 - **Error Handling** - Centralized error handling with detailed context and recovery strategies
 - **Code Organization** - Modular architecture with extracted utilities and reusable components
 
-## Testing
-
-This project uses Vitest for unit tests and Playwright for end-to-end tests.
-
-```bash
-# Run unit tests in watch mode
-npm run test
-
-# Run unit tests with Vitest UI
-npm run test:ui
-
-# Run unit tests once
-npm run test:run
-
-# Run with coverage
-npm run test:coverage
-
-# Run E2E tests
-npm run test:e2e
-
-# Run E2E tests with UI
-npm run test:e2e:ui
-```
-
-See `__tests__/README.md` for testing patterns and conventions.
-
 ## Developer
 
 This application is developed and maintained by [Helvety](https://helvety.com), a Swiss company committed to transparency, strong security, and respect for user privacy and data protection.
@@ -368,10 +167,20 @@ For questions or inquiries, please contact us at [contact@helvety.com](mailto:co
 
 ## License & Usage
 
-This repository is public for transparency purposes only. All code is open for inspection so users can verify its behavior.
+> **This is NOT open source software.**
 
-**All Rights Reserved.** No license is granted. You may view the code, but you may not copy, reuse, redistribute, modify, or sell it without explicit written permission.
+This repository is public **for transparency purposes only** so users can verify the application's behavior and security.
 
-Purchasing a subscription grants access to use the hosted service only—subscriptions do not grant any rights to the source code.
+**All Rights Reserved.** No license is granted for any use of this code. You may:
+- View and inspect the code
 
-See [LICENSE](./LICENSE) for full terms.
+You may NOT:
+- Clone, copy, or download this code for any purpose
+- Modify, adapt, or create derivative works
+- Redistribute or share this code
+- Use this code in your own projects
+- Run this code locally or on your own servers
+
+**Purchasing a subscription grants access to use the hosted service at [pdf.helvety.com](https://pdf.helvety.com) only.** Subscriptions do not grant any rights to the source code.
+
+See [LICENSE](./LICENSE) for full legal terms.
