@@ -13,6 +13,7 @@ import {
   User,
   ShoppingBag,
   Check,
+  Settings,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,7 +21,7 @@ import { useState } from "react";
 
 // Internal components
 import { AppSwitcher } from "@/components/app-switcher";
-import { useSubscriptionContext } from "@/components/auth-provider";
+import { useSubscriptionContext } from "@/components/subscription-provider";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -273,6 +274,20 @@ export function Navbar() {
                 </div>
                 <Separator />
                 <div className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    asChild
+                  >
+                    <a
+                      href="https://store.helvety.com/account"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Account
+                    </a>
+                  </Button>
                   <Button
                     variant="outline"
                     className="w-full justify-start"

@@ -80,33 +80,37 @@ This application uses centralized authentication via [auth.helvety.com](https://
 
 ### Authentication Flow
 
-Authentication is handled by the centralized Helvety Auth service (`auth.helvety.com`) using **passkey-only authentication** — no email or password required:
+Authentication is handled by the centralized Helvety Auth service (`auth.helvety.com`) using **email + passkey authentication** — no passwords required:
 
 **New Users:**
 
-1. Redirected to auth.helvety.com → Click "Create Account"
-2. Scan QR code with phone → Verify with biometrics (Face ID/fingerprint)
-3. Account created → Session established → Redirected back to PDF app
-4. Setup encryption passkey (for encrypting sensitive data)
+1. Redirected to auth.helvety.com → Enter email address
+2. Click magic link in email → Verify email ownership
+3. Scan QR code with phone → Verify with biometrics (Face ID/fingerprint)
+4. Passkey created → Verify passkey → Session established → Redirected back to PDF app
+5. Setup encryption passkey (for encrypting sensitive data)
 
 **Returning Users:**
 
-1. Redirected to auth.helvety.com → Click "Sign In"
-2. Scan QR code → Verify with biometrics → Session created
-3. Redirected back → Unlock encryption with passkey
+1. Redirected to auth.helvety.com → Enter email address
+2. Click magic link in email → Verify email ownership
+3. Scan QR code → Verify with biometrics → Session created
+4. Redirected back → Unlock encryption with passkey
 
 Sessions are shared across all `*.helvety.com` subdomains via cookie-based SSO.
 
-**Privacy Note:** Helvety accounts do not require an email address. When you make a purchase, your email and billing information is collected by Stripe, not stored by Helvety.
+**Privacy Note:** Your email address is used solely for authentication (magic links) and account recovery. We do not share your email with third parties for marketing purposes.
 
 ### End-to-End Encryption
 
 User data is protected with client-side encryption using the WebAuthn PRF extension:
 
+- **Centralized Setup** - Encryption is set up once via `auth.helvety.com` after initial passkey registration
 - **Passkey-derived keys** - Encryption keys are derived from your passkey using the PRF extension
 - **Zero-knowledge** - The server never sees your encryption key; all encryption/decryption happens in the browser
 - **Device-bound security** - Your passkey (stored on your phone) is the only way to decrypt your data
 - **Cross-subdomain passkeys** - Encryption passkeys work across all Helvety apps (registered to `helvety.com` RP ID)
+- **Unlock Flow** - When returning, users unlock encryption with their existing passkey
 
 ### Browser Requirements
 
@@ -134,15 +138,20 @@ This project is built with modern web technologies:
 - **[Radix UI](https://www.radix-ui.com/)** - Unstyled, accessible component primitives
 - **[Lucide React](https://lucide.dev/)** - Icon library
 - **[next-themes](https://github.com/pacocoursey/next-themes)** - Dark mode support
+- **[Vitest](https://vitest.dev/)** - Unit and integration testing
+- **[Playwright](https://playwright.dev/)** - End-to-end testing
 
 ## Project Structure
 
 ```
 helvety-pdf/
+├── __tests__/              # Unit and integration tests
+├── .github/
+│   └── workflows/          # CI/CD workflows
+│       └── test.yml        # Automated testing
 ├── app/                    # Next.js App Router
 │   ├── actions/           # Server actions
 │   │   ├── encryption-actions.ts # Encryption parameter management
-│   │   ├── encryption-passkey-actions.ts # Passkey operations for encryption
 │   │   └── subscription-actions.ts # Subscription status queries
 │   ├── auth/callback/     # Session establishment callback
 │   ├── globals.css        # Global styles
@@ -156,10 +165,7 @@ helvety-pdf/
 │   ├── ui/               # shadcn/ui component library
 │   │   └── index.ts      # Barrel exports
 │   ├── app-switcher.tsx   # Helvety ecosystem app switcher
-│   ├── auth-provider.tsx  # Authentication context provider
 │   ├── encryption-gate.tsx # Encryption setup/unlock gate
-│   ├── encryption-setup.tsx # Encryption passkey setup
-│   ├── encryption-stepper.tsx # Encryption flow progress indicator
 │   ├── encryption-unlock.tsx # Encryption passkey unlock
 │   ├── helvety-pdf.tsx    # Main PDF management component
 │   ├── navbar.tsx         # Navigation bar
@@ -219,11 +225,15 @@ helvety-pdf/
 │   ├── page-actions.tsx   # Page action components
 │   ├── pdf-utils.ts       # PDF utilities (main entry point)
 │   └── utils.ts           # General utilities
+├── e2e/                   # End-to-end tests (Playwright)
 ├── public/                # Static assets
 │   ├── pdf.worker.min.mjs # PDF.js worker file
 │   ├── pdf-rendering-worker.js # Custom rendering worker
 │   └── *.svg              # Logo and branding assets
-└── [config files]         # Configuration files
+├── vitest.config.ts       # Vitest configuration
+├── vitest.setup.ts        # Test setup
+├── playwright.config.ts   # Playwright E2E configuration
+└── [config files]         # Other configuration files
 ```
 
 ## Architecture & Performance

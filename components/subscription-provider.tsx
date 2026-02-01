@@ -28,9 +28,9 @@ export function useSubscriptionContext(): SubscriptionContextValue {
 }
 
 /**
- * Auth provider component that wraps the app and provides subscription context
+ * Subscription provider component that wraps the app and provides subscription context
  */
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const subscription = useSubscription();
 
   return (

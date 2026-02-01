@@ -3,6 +3,20 @@
  */
 
 /**
+ * Toast notification durations (in milliseconds)
+ */
+export const TOAST_DURATIONS = {
+  /** Success messages */
+  SUCCESS: 5000,
+  /** Informational messages */
+  INFO: 4000,
+  /** Error messages (auto-dismiss) */
+  ERROR: 8000,
+  /** Critical errors (manual dismiss) */
+  ERROR_CRITICAL: Infinity,
+} as const;
+
+/**
  * Breakpoint values for responsive column layout (in pixels)
  */
 export const BREAKPOINTS = {
@@ -36,7 +50,7 @@ export const COLUMNS = {
 export const DELAYS = {
   /** Delay before revoking blob URLs after download */
   BLOB_URL_CLEANUP: 100,
-  /** Delay before auto-dismissing non-critical errors */
+  /** @deprecated Use TOAST_DURATIONS.ERROR instead */
   ERROR_AUTO_DISMISS: 8000,
 } as const;
 

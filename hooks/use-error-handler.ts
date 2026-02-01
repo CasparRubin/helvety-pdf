@@ -1,7 +1,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 
-import { DELAYS, CRITICAL_ERROR_PATTERNS } from "@/lib/constants";
+import { TOAST_DURATIONS, CRITICAL_ERROR_PATTERNS } from "@/lib/constants";
 
 interface UseErrorHandlerReturn {
   readonly setError: (error: string | null) => void;
@@ -40,7 +40,9 @@ export function useErrorHandler(_isProcessing: boolean): UseErrorHandlerReturn {
     // Critical errors: Infinity (persist until dismissed)
     // Non-critical errors: auto-dismiss after configured delay
     const toastId = toast.error(error, {
-      duration: isCriticalError ? Infinity : DELAYS.ERROR_AUTO_DISMISS,
+      duration: isCriticalError
+        ? TOAST_DURATIONS.ERROR_CRITICAL
+        : TOAST_DURATIONS.ERROR,
     });
 
     toastIdRef.current = toastId;

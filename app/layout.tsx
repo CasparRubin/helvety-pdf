@@ -1,8 +1,8 @@
 import localFont from "next/font/local";
 
-import { AuthProvider } from "@/components/auth-provider";
 import { AuthTokenHandler } from "@/components/auth-token-handler";
 import { Navbar } from "@/components/navbar";
+import { SubscriptionProvider } from "@/components/subscription-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -129,13 +129,13 @@ export default function RootLayout({
           <AuthTokenHandler />
           <TooltipProvider>
             <EncryptionProvider>
-              <AuthProvider>
+              <SubscriptionProvider>
                 <div className="flex h-screen flex-col overflow-hidden">
                   <Navbar />
                   <main className="flex-1 overflow-hidden">{children}</main>
                 </div>
                 <Toaster />
-              </AuthProvider>
+              </SubscriptionProvider>
             </EncryptionProvider>
           </TooltipProvider>
         </ThemeProvider>
