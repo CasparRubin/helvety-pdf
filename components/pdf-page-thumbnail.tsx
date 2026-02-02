@@ -19,8 +19,9 @@ import {
 } from "@/lib/constants";
 import { getImageBitmapCache } from "@/lib/imagebitmap-cache";
 import { logger } from "@/lib/logger";
+import { debounce } from "@/lib/pdf-helpers";
 import { calculateOptimalDPR } from "@/lib/thumbnail-dpr";
-import { cn, debounce } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 // Dynamically import react-pdf to avoid SSR issues
 const Document = dynamic(
@@ -71,8 +72,9 @@ function PdfPageThumbnailComponent({
     null
   );
   const [useImageBitmap, setUseImageBitmap] = React.useState(false);
+  const [renderRetryCount, setRenderRetryCount] = React.useState(0);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const renderRetryCountRef = React.useRef(0);
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const { screenSize } = useScreenSize();
 
   // PDF rendering hook for ImageBitmap rendering
@@ -121,7 +123,7 @@ function PdfPageThumbnailComponent({
     setIsHighQuality(false);
     setImageBitmap(null);
     setUseImageBitmap(false);
-    renderRetryCountRef.current = 0;
+    setRenderRetryCount(0);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -247,8 +249,6 @@ function PdfPageThumbnailComponent({
     };
   }, [calculateDPR]);
 
-  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
   /**
    * Callback handler for when the PDF document successfully loads.
    * The numPages parameter is provided by react-pdf but not used here since
@@ -262,7 +262,7 @@ function PdfPageThumbnailComponent({
       setLoading(false);
       setError(false);
       setErrorMessage(null);
-      renderRetryCountRef.current = 0;
+      setRenderRetryCount(0);
       // Clear any existing timeout
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -278,7 +278,7 @@ function PdfPageThumbnailComponent({
         }, PDF_RENDER.PAGE_RENDER_DELAY);
       }, PDF_RENDER.DOCUMENT_READY_DELAY);
       // Store timeout ID in ref for cleanup
-      // eslint-disable-next-line react-hooks/immutability -- Refs are mutable by design
+       
       timeoutRef.current = timeoutId;
     },
     []
@@ -434,12 +434,12 @@ function PdfPageThumbnailComponent({
                   workerReady &&
                   !shouldUnmount && (
                     <PageErrorBoundary
-                      retryKey={renderRetryCountRef.current}
+                      retryKey={renderRetryCount}
                       onError={() => {
                         // Handle messageHandler errors caught by error boundary
-                        if (renderRetryCountRef.current < 3) {
+                        if (renderRetryCount < 3) {
                           setPageRenderReady(false);
-                          renderRetryCountRef.current += 1;
+                          setRenderRetryCount((prev) => prev + 1);
                           // Clear any existing timeout
                           if (timeoutRef.current) {
                             clearTimeout(timeoutRef.current);
@@ -450,9 +450,9 @@ function PdfPageThumbnailComponent({
                               setPageRenderReady(true);
                             },
                             PDF_RENDER.RENDER_RETRY_DELAY *
-                              (renderRetryCountRef.current + 1)
+                              (renderRetryCount + 1)
                           );
-                          // eslint-disable-next-line react-hooks/immutability -- Refs are mutable by design
+                           
                           timeoutRef.current = timeoutId;
                         } else {
                           setError(true);
@@ -461,7 +461,7 @@ function PdfPageThumbnailComponent({
                       }}
                     >
                       <Page
-                        key={`${pageNumber}-${pageWidth}-${rotation ?? 0}-${renderRetryCountRef.current}-${isHighQuality ? "hq" : "lq"}`}
+                        key={`${pageNumber}-${pageWidth}-${rotation ?? 0}-${renderRetryCount}-${isHighQuality ? "hq" : "lq"}`}
                         pageNumber={pageNumber}
                         width={pageWidth}
                         renderTextLayer={false}
@@ -482,11 +482,11 @@ function PdfPageThumbnailComponent({
                           if (
                             (errorMessage.includes("messageHandler") ||
                               errorMessage.includes("sendWithPromise")) &&
-                            renderRetryCountRef.current < 3
+                            renderRetryCount < 3
                           ) {
                             // Reset states and retry after a longer delay
                             setPageRenderReady(false);
-                            renderRetryCountRef.current += 1;
+                            setRenderRetryCount((prev) => prev + 1);
                             // Clear any existing timeout
                             if (timeoutRef.current) {
                               clearTimeout(timeoutRef.current);
@@ -497,9 +497,9 @@ function PdfPageThumbnailComponent({
                                 setPageRenderReady(true);
                               },
                               PDF_RENDER.RENDER_RETRY_DELAY *
-                                (renderRetryCountRef.current + 1)
+                                (renderRetryCount + 1)
                             );
-                            // eslint-disable-next-line react-hooks/immutability -- Refs are mutable by design
+                             
                             timeoutRef.current = timeoutId;
                           } else {
                             // For other errors or after max retries, show error state

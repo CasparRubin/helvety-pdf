@@ -12,6 +12,7 @@ import { downloadBlob } from "@/lib/file-download";
 import { logger } from "@/lib/logger";
 import { createPdfErrorInfo } from "@/lib/pdf-errors";
 import { extractPageFromPdf } from "@/lib/pdf-extraction";
+import { formatTimestamp } from "@/lib/pdf-helpers";
 import { createPageMap, createFileMap } from "@/lib/pdf-lookup-utils";
 import {
   applyPageRotation,
@@ -20,7 +21,6 @@ import {
   normalizeRotation,
 } from "@/lib/pdf-rotation";
 import { withTimeout } from "@/lib/timeout-utils";
-import { formatTimestamp } from "@/lib/utils";
 
 // Types
 import type { PdfFile, UnifiedPage } from "@/lib/types";

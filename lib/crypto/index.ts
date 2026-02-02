@@ -74,9 +74,6 @@ export type {
 export {
   isPasskeySupported,
   isPlatformAuthenticatorAvailable,
-  isMobileDevice,
-  getPlatformPRFSupport,
-  getDeviceCapabilities,
   getRPConfig,
   generateRegistrationOptions,
   generateAuthenticationOptions,
@@ -87,7 +84,6 @@ export {
 } from "./passkey";
 export type {
   RPConfig,
-  DeviceCapabilities,
   PasskeyRegistrationResult,
   PasskeyAuthenticationResult,
 } from "./passkey";

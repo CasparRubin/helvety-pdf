@@ -19,7 +19,6 @@ const PRF_SALT_LENGTH = 32;
 /**
  * HKDF info string for cross-app compatibility
  * This is shared across all Helvety apps (pdf, store, auth, etc.)
- * IMPORTANT: Changing this value will break key derivation for all existing users!
  */
 const HKDF_INFO = "helvety-e2ee-v1";
 
@@ -82,7 +81,7 @@ export async function deriveKeyFromPRF(
       {
         name: "HKDF",
         hash: "SHA-256",
-        salt: salt as Uint8Array<ArrayBuffer>,
+        salt,
         info,
       },
       keyMaterial,
