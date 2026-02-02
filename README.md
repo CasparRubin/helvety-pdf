@@ -127,6 +127,18 @@ Passkey encryption requires a modern browser with WebAuthn PRF support:
 
 **Note:** Firefox for Android does not support the PRF extension.
 
+### Security Hardening
+
+This application implements comprehensive security hardening:
+
+- **Session Management** - Automatic session refresh via `proxy.ts` (Next.js 16 pattern)
+- **Server Layout Guards** - Authentication checks in Server Components (CVE-2025-29927 compliant)
+- **CSRF Protection** - Token-based protection for state-changing operations
+- **Rate Limiting** - Protection against brute force attacks
+- **Idle Timeout** - Automatic session expiration after 30 minutes of inactivity
+- **Audit Logging** - Structured logging for authentication and encryption events
+- **Security Headers** - CSP, HSTS, and other security headers
+
 **Legal Pages:** Privacy Policy, Terms of Service, and Impressum are hosted centrally on [helvety.com](https://helvety.com) and linked from the navbar.
 
 ## Tech Stack
