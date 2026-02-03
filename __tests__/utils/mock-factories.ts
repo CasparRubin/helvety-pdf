@@ -85,7 +85,9 @@ export function createMockErrorResponse(message: string, code?: string) {
 /**
  * Creates a mock PDF file object
  */
-export function createMockPdfFile(overrides?: Partial<MockPdfFile>): MockPdfFile {
+export function createMockPdfFile(
+  overrides?: Partial<MockPdfFile>
+): MockPdfFile {
   return {
     id: "test-pdf-id",
     name: "test.pdf",

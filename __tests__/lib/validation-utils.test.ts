@@ -241,7 +241,9 @@ describe("validation-utils", () => {
         error: "'test.exe' is not a supported file type.",
       });
 
-      const files = [createMockFile("test.exe", 1000, "application/x-msdownload")];
+      const files = [
+        createMockFile("test.exe", 1000, "application/x-msdownload"),
+      ];
       const existingFiles: ReturnType<typeof createMockPdfFileObject>[] = [];
 
       const result = validateFiles(files, existingFiles);
@@ -268,7 +270,10 @@ describe("validation-utils", () => {
       vi.mocked(validateFileType)
         .mockReturnValueOnce({ valid: false, error: "'bad1.exe' invalid type" })
         .mockReturnValueOnce({ valid: true })
-        .mockReturnValueOnce({ valid: false, error: "'bad2.txt' invalid type" });
+        .mockReturnValueOnce({
+          valid: false,
+          error: "'bad2.txt' invalid type",
+        });
 
       const files = [
         createMockFile("bad1.exe"),
@@ -359,7 +364,9 @@ describe("validation-utils", () => {
   describe("generateUniqueFileName", () => {
     it("should return original name if no conflicts", () => {
       const existingFiles = [createMockPdfFileObject("other.pdf")];
-      expect(generateUniqueFileName("test.pdf", existingFiles)).toBe("test.pdf");
+      expect(generateUniqueFileName("test.pdf", existingFiles)).toBe(
+        "test.pdf"
+      );
     });
 
     it("should add _2 suffix for first conflict", () => {

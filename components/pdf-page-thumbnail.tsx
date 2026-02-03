@@ -278,7 +278,7 @@ function PdfPageThumbnailComponent({
         }, PDF_RENDER.PAGE_RENDER_DELAY);
       }, PDF_RENDER.DOCUMENT_READY_DELAY);
       // Store timeout ID in ref for cleanup
-       
+
       timeoutRef.current = timeoutId;
     },
     []
@@ -452,7 +452,7 @@ function PdfPageThumbnailComponent({
                             PDF_RENDER.RENDER_RETRY_DELAY *
                               (renderRetryCount + 1)
                           );
-                           
+
                           timeoutRef.current = timeoutId;
                         } else {
                           setError(true);
@@ -499,7 +499,7 @@ function PdfPageThumbnailComponent({
                               PDF_RENDER.RENDER_RETRY_DELAY *
                                 (renderRetryCount + 1)
                             );
-                             
+
                             timeoutRef.current = timeoutId;
                           } else {
                             // For other errors or after max retries, show error state

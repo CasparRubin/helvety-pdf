@@ -117,11 +117,13 @@ User data is protected with client-side encryption using the WebAuthn PRF extens
 Passkey encryption requires a modern browser with WebAuthn PRF support:
 
 **Desktop:**
+
 - Chrome 128+ or Edge 128+
 - Safari 18+ on Mac
 - Firefox 139+ (desktop only)
 
 **Mobile:**
+
 - iPhone with iOS 18+
 - Android 14+ with Chrome
 
@@ -183,9 +185,11 @@ For questions or inquiries, please contact us at [contact@helvety.com](mailto:co
 This repository is public **for transparency purposes only** so users can verify the application's behavior and security.
 
 **All Rights Reserved.** No license is granted for any use of this code. You may:
+
 - View and inspect the code
 
 You may NOT:
+
 - Clone, copy, or download this code for any purpose
 - Modify, adapt, or create derivative works
 - Redistribute or share this code
