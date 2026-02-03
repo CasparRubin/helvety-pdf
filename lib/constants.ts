@@ -1,5 +1,6 @@
 /**
  * Application-wide constants
+ * TOAST_DURATIONS is shared with helvety.com; other constants are PDF-app specific.
  */
 
 /**

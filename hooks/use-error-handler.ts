@@ -35,7 +35,7 @@ export function useErrorHandler(_isProcessing: boolean): UseErrorHandlerReturn {
     }
 
     // Check if error matches any critical error pattern
-    const isCriticalError = CRITICAL_ERROR_PATTERNS.some((pattern) =>
+    const isCriticalError = CRITICAL_ERROR_PATTERNS.some((pattern: string) =>
       error.includes(pattern)
     );
 

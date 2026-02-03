@@ -35,7 +35,7 @@ export function getLoginUrl(currentUrl?: string): string {
     redirectUri =
       process.env.NODE_ENV === "development"
         ? "http://localhost:3000"
-        : "https://pdf.helvety.com";
+        : "https://helvety.com";
   }
 
   return `${authBase}/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
@@ -54,7 +54,7 @@ export function getLogoutUrl(redirectUri?: string): string {
     redirectUri ??
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
-      : "https://pdf.helvety.com");
+      : "https://helvety.com");
 
   return `${authBase}/logout?redirect_uri=${encodeURIComponent(redirect)}`;
 }
