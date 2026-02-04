@@ -3,8 +3,7 @@
 import { Upload } from "lucide-react";
 import * as React from "react";
 
-import { PdfPageGrid } from "@/components/pdf-page-grid";
-import { PdfToolkit } from "@/components/pdf-toolkit";
+import { PdfPageGrid, PdfToolkit } from "@/components/pdf";
 import { useSubscriptionContext } from "@/components/subscription-provider";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { useColumns } from "@/hooks/use-columns";

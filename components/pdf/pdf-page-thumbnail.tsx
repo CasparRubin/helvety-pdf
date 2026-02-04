@@ -4,9 +4,6 @@ import { FileTextIcon, AlertCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 import * as React from "react";
 
-import { PdfImageThumbnail } from "@/components/pdf-image-thumbnail";
-import { PdfImageBitmapThumbnail } from "@/components/pdf-imagebitmap-thumbnail";
-import { PageErrorBoundary } from "@/components/pdf-page-error-boundary";
 import { usePdfRendering } from "@/hooks/use-pdf-rendering";
 import { usePdfWorker } from "@/hooks/use-pdf-worker";
 import { useProgressiveQuality } from "@/hooks/use-progressive-quality";
@@ -22,6 +19,10 @@ import { logger } from "@/lib/logger";
 import { debounce } from "@/lib/pdf-helpers";
 import { calculateOptimalDPR } from "@/lib/thumbnail-dpr";
 import { cn } from "@/lib/utils";
+
+import { PdfImageThumbnail } from "./pdf-image-thumbnail";
+import { PdfImageBitmapThumbnail } from "./pdf-imagebitmap-thumbnail";
+import { PageErrorBoundary } from "./pdf-page-error-boundary";
 
 // Dynamically import react-pdf to avoid SSR issues
 const Document = dynamic(

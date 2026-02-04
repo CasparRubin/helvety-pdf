@@ -2,9 +2,6 @@
 
 import * as React from "react";
 
-import { PdfActionButtons } from "@/components/pdf-action-buttons";
-import { PageErrorBoundary } from "@/components/pdf-page-error-boundary";
-import { PdfPageThumbnail } from "@/components/pdf-page-thumbnail";
 import { Badge } from "@/components/ui/badge";
 import { usePageDragDrop } from "@/hooks/use-page-drag-drop";
 import {
@@ -20,6 +17,10 @@ import {
   createFileUrlMap,
 } from "@/lib/pdf-lookup-utils";
 import { cn } from "@/lib/utils";
+
+import { PdfActionButtons } from "./pdf-action-buttons";
+import { PageErrorBoundary } from "./pdf-page-error-boundary";
+import { PdfPageThumbnail } from "./pdf-page-thumbnail";
 
 import type { PdfFile, UnifiedPage } from "@/lib/types";
 
