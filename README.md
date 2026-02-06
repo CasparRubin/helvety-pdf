@@ -76,58 +76,29 @@ Subscribe at [store.helvety.com](https://store.helvety.com/products/helvety-pdf)
 
 ## Security & Authentication
 
-This application uses centralized authentication via [auth.helvety.com](https://auth.helvety.com) with end-to-end encryption:
-
 ### Authentication Flow
 
-Authentication is handled by the centralized Helvety Auth service (`auth.helvety.com`) using **email + passkey authentication** — no passwords required:
+Authentication is handled by the centralized Helvety Auth service (`auth.helvety.com`) using **email + passkey authentication** — no passwords required. **Login is optional** — users can use the PDF tool without an account. Login is only required for Pro subscription features.
 
-**New Users:**
+**New Users (when signing in):**
 
-1. Redirected to auth.helvety.com → Enter email address
+1. Click "Sign in" → Redirected to auth.helvety.com → Enter email address
 2. Click magic link in email → Verify email ownership
 3. Scan QR code with phone → Verify with biometrics (Face ID/fingerprint)
 4. Passkey created → Verify passkey → Session established → Redirected back to PDF app
-5. Setup encryption passkey (for encrypting sensitive data)
 
-**Returning Users:**
+**Returning Users (when signing in):**
 
-1. Redirected to auth.helvety.com → Enter email address
+1. Click "Sign in" → Redirected to auth.helvety.com → Enter email address
 2. Sign in with passkey (no email sent; existing users with a passkey skip the magic link)
 3. Scan QR code → Verify with biometrics → Session created
-4. Redirected back → Unlock encryption with passkey
+4. Redirected back to PDF app
 
 Sessions are shared across all `*.helvety.com` subdomains via cookie-based SSO.
 
 **Privacy Note:** Your email address is used solely for authentication (magic links for new users, passkey for returning) and account recovery. We do not share your email with third parties for marketing purposes.
 
-### End-to-End Encryption
-
-User data is protected with client-side encryption using the WebAuthn PRF extension:
-
-- **Centralized Setup** - Encryption is set up once via `auth.helvety.com` after initial passkey registration
-- **Passkey-derived keys** - Encryption keys are derived from your passkey using the PRF extension
-- **Zero-knowledge** - The server never sees your encryption key; all encryption/decryption happens in the browser
-- **Device-bound security** - Your passkey (stored on your phone) is the only way to decrypt your data
-- **Cross-subdomain passkeys** - Encryption passkeys work across all Helvety apps (registered to `helvety.com` RP ID)
-- **Unlock Flow** - When returning, users unlock encryption with their existing passkey
-
-### Browser Requirements
-
-Passkey encryption requires a modern browser with WebAuthn PRF support:
-
-**Desktop:**
-
-- Chrome 128+ or Edge 128+
-- Safari 18+ on Mac
-- Firefox 139+ (desktop only)
-
-**Mobile:**
-
-- iPhone with iOS 18+
-- Android 14+ with Chrome
-
-**Note:** Firefox for Android does not support the PRF extension.
+**Note:** End-to-end encryption is not used in this app. E2EE is only used by [Helvety Tasks](https://tasks.helvety.com).
 
 ### Security Hardening
 
@@ -144,10 +115,6 @@ This application implements comprehensive security hardening:
 
 **Legal Pages:** Privacy Policy, Terms of Service, and Impressum are hosted centrally on [helvety.com](https://helvety.com) and linked in the site footer.
 
-**Pre-deployment:** Run `npm run predeploy` to run format check, type check, lint, and production build.
-
-**Development standards:** See `.cursor/rules/` for code organization, JSDoc, shared code patterns, after-change checklist (comments, README, legal), and official-docs-first. When editing shared code, run sync from helvety.com (see that repo's README).
-
 ## Tech Stack
 
 This project is built with modern web technologies:
@@ -156,7 +123,6 @@ This project is built with modern web technologies:
 - **[React 19.2.4](https://react.dev/)** - UI library
 - **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
 - **[Supabase](https://supabase.com/)** - Backend-as-a-Service (Auth & Database)
-- **[SimpleWebAuthn](https://simplewebauthn.dev/)** - WebAuthn/passkey authentication
 - **[pdf-lib](https://pdf-lib.js.org/)** - PDF manipulation and creation
 - **[react-pdf](https://www.npmjs.com/package/react-pdf)** - React components for PDF display
 - **[pdfjs-dist](https://mozilla.github.io/pdf.js/)** - PDF rendering engine (used by react-pdf)
@@ -165,8 +131,6 @@ This project is built with modern web technologies:
 - **[Radix UI](https://www.radix-ui.com/)** - Unstyled, accessible component primitives
 - **[Lucide React](https://lucide.dev/)** - Icon library
 - **[next-themes](https://github.com/pacocoursey/next-themes)** - Dark mode support
-
-**Environment:** Copy `env.template` to `.env.local` and set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`, and (for server-side admin) `SUPABASE_SECRET_KEY`. Node.js 20.9+ required.
 
 ## Architecture & Performance
 

@@ -7,7 +7,6 @@ import { SubscriptionProvider } from "@/components/subscription-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { EncryptionProvider } from "@/lib/crypto";
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
@@ -132,20 +131,18 @@ export default function RootLayout({
         >
           <AuthTokenHandler />
           <TooltipProvider>
-            <EncryptionProvider>
-              <SubscriptionProvider>
-                <div className="flex h-screen flex-col overflow-hidden">
-                  <header className="shrink-0">
-                    <Navbar />
-                  </header>
-                  <main className="min-h-0 flex-1 overflow-hidden">
-                    {children}
-                  </main>
-                  <Footer className="shrink-0" />
-                </div>
-                <Toaster />
-              </SubscriptionProvider>
-            </EncryptionProvider>
+            <SubscriptionProvider>
+              <div className="flex h-screen flex-col overflow-hidden">
+                <header className="shrink-0">
+                  <Navbar />
+                </header>
+                <main className="min-h-0 flex-1 overflow-hidden">
+                  {children}
+                </main>
+                <Footer className="shrink-0" />
+              </div>
+              <Toaster />
+            </SubscriptionProvider>
           </TooltipProvider>
         </ThemeProvider>
       </body>
