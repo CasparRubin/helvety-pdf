@@ -30,8 +30,8 @@ export interface TierLimits {
 export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
   free: {
     maxFiles: 2,
-    maxPages: 5,
-    canRotate: false,
+    maxPages: 10,
+    canRotate: true,
     name: "Basic",
     description: "Free tier with limited features",
   },

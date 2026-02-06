@@ -38,9 +38,9 @@ export function HelvetyPdf(): React.JSX.Element {
 
   // State for showing upgrade prompt
   const [showUpgradePrompt, setShowUpgradePrompt] = React.useState(false);
-  const [upgradeReason, setUpgradeReason] = React.useState<
-    "files" | "pages" | "rotation"
-  >("files");
+  const [upgradeReason, setUpgradeReason] = React.useState<"files" | "pages">(
+    "files"
+  );
 
   // PDF files management with tier-based limits
   const {
@@ -146,28 +146,20 @@ export function HelvetyPdf(): React.JSX.Element {
     [pageState, pageOrder.length, setError]
   );
 
-  // Page rotation (wrapped for consistency, gated by tier)
+  // Page rotation (wrapped for consistency)
   const handleRotatePage = React.useCallback(
     (unifiedPageNumber: number, angle: number): void => {
-      if (!limits.canRotate) {
-        setUpgradeReason("rotation");
-        setShowUpgradePrompt(true);
-        return;
-      }
       pageState.rotatePage(unifiedPageNumber, angle, setError);
     },
-    [pageState, setError, limits.canRotate]
+    [pageState, setError]
   );
 
   // Reset rotation (wrapped for consistency)
   const handleResetRotation = React.useCallback(
     (unifiedPageNumber: number): void => {
-      if (!limits.canRotate) {
-        return; // Silently ignore if rotation not allowed
-      }
       pageState.resetRotation(unifiedPageNumber, setError);
     },
-    [pageState, setError, limits.canRotate]
+    [pageState, setError]
   );
 
   // Handle click on empty drop zone to open file picker

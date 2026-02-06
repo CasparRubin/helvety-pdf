@@ -389,7 +389,6 @@ function PdfToolkitComponent({
                       <p>
                         Max {limits.maxFiles} files, {limits.maxPages} pages
                       </p>
-                      {!limits.canRotate && <p>Rotation not available</p>}
                     </div>
                   )}
                   <div className="border-t pt-3">
@@ -401,7 +400,6 @@ function PdfToolkitComponent({
                       {[
                         "Unlimited file uploads",
                         "Unlimited pages",
-                        "Rotate pages",
                         "All merge & split features",
                         "Client-side processing",
                         "Priority support",

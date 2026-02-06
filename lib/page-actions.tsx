@@ -55,7 +55,7 @@ export interface CreatePageActionsParams {
   hasRotation: boolean;
   rotation: number;
   isProcessing: boolean;
-  /** Whether rotation is allowed (Pro feature) */
+  /** Whether rotation is allowed */
   canRotate?: boolean;
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
@@ -143,7 +143,7 @@ export function createPageActions(
       disabled: isProcessing,
       variant: isDeleted ? "destructive" : "secondary",
     },
-    // Rotate buttons (only show if canRotate is true)
+    // Rotate buttons
     ...(canRotate
       ? [
           {
@@ -163,18 +163,7 @@ export function createPageActions(
             disabled: isProcessing,
           },
         ]
-      : [
-          // Show disabled rotate button with upgrade hint for non-Pro users
-          {
-            icon: <RotateCw className="h-4 w-4" />,
-            onClick: () =>
-              onRotate(unifiedPageNumber, ROTATION_ANGLES.INCREMENT),
-            ariaLabel: "Upgrade to Pro for rotation",
-            title: "Pro feature",
-            description: "Upgrade to rotate pages",
-            disabled: true,
-          },
-        ]),
+      : []),
     // Reset rotation button (only show if rotated AND canRotate)
     ...(hasRotation && canRotate
       ? [

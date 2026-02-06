@@ -34,7 +34,7 @@ A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract 
 
 **Privacy First** - 100% Client-Side Processing. All file processing happens entirely in your browser. The application does not collect or transmit your file data (hosting provider may collect connection metadata - see Privacy Policy).
 
-Helvety PDF offers a free Basic tier with essential features, and a Pro subscription for unlimited usage and advanced features like page rotation.
+Helvety PDF offers a free Basic tier with essential features, and a Pro subscription for unlimited usage.
 
 ## Features
 
@@ -42,7 +42,7 @@ Helvety PDF offers a free Basic tier with essential features, and a Pro subscrip
 - **PDF and image support** - Upload PDF files and images (PNG, JPEG, WebP, GIF, etc.)
 - **Page thumbnails preview** - Visual preview of all pages before processing
 - **Drag & drop reordering** - Easily rearrange pages by dragging thumbnails
-- **Page rotation** - Rotate individual pages by 90° increments _(Pro)_
+- **Page rotation** - Rotate individual pages by 90° increments
 - **Page deletion** - Remove unwanted pages from your documents
 - **Page extraction** - Extract individual pages as separate PDF files
 - **Multi-file merging** - Combine multiple PDF files and images into one PDF
@@ -57,13 +57,13 @@ Helvety PDF offers a free Basic tier and a paid Pro subscription:
 | Feature                | Basic (Free) | Pro (CHF 4.95/month) |
 | ---------------------- | ------------ | -------------------- |
 | Files                  | Max 2 files  | Unlimited            |
-| Pages                  | Max 5 pages  | Unlimited            |
+| Pages                  | Max 10 pages | Unlimited            |
 | Merge files            | Yes          | Yes                  |
 | Split files            | Yes          | Yes                  |
 | Reorder pages          | Yes          | Yes                  |
 | Delete pages           | Yes          | Yes                  |
 | Extract pages          | Yes          | Yes                  |
-| Rotate pages           | -            | Yes                  |
+| Rotate pages           | Yes          | Yes                  |
 | Client-side processing | Yes          | Yes                  |
 
 Subscribe at [store.helvety.com](https://store.helvety.com/products/helvety-pdf)

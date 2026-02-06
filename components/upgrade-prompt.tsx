@@ -19,14 +19,13 @@ import type { TierLimits } from "@/lib/types/subscription";
 interface UpgradePromptProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  reason: "files" | "pages" | "rotation";
+  reason: "files" | "pages";
   limits: TierLimits;
 }
 
 const REASON_TITLES: Record<UpgradePromptProps["reason"], string> = {
   files: "File Limit Reached",
   pages: "Page Limit Reached",
-  rotation: "Pro Feature",
 };
 
 const REASON_DESCRIPTIONS: Record<
@@ -37,13 +36,11 @@ const REASON_DESCRIPTIONS: Record<
     `You've reached the maximum of ${limits.maxFiles} files with your Basic plan.`,
   pages: (limits) =>
     `You've reached the maximum of ${limits.maxPages} pages with your Basic plan.`,
-  rotation: () => "Page rotation is a Pro feature.",
 };
 
 const PRO_FEATURES = [
   "Unlimited file uploads",
   "Unlimited pages",
-  "Rotate pages",
   "All merge & split features",
   "Client-side processing",
   "Priority support",

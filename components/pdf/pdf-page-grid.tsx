@@ -38,7 +38,7 @@ interface PdfPageGridProps {
   readonly onExtract: (unifiedPageNumber: number) => void;
   readonly isProcessing: boolean;
   readonly columns?: number;
-  /** Whether rotation is allowed (Pro feature) */
+  /** Whether rotation is allowed */
   readonly canRotate?: boolean;
 }
 
