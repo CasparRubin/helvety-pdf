@@ -113,7 +113,7 @@ This application implements comprehensive security hardening:
 - **Audit Logging** - Structured logging for authentication and encryption events
 - **Security Headers** - CSP, HSTS, and other security headers
 
-**Legal Pages:** Privacy Policy, Terms of Service, and Impressum are hosted centrally on [helvety.com](https://helvety.com) and linked in the site footer.
+**Legal Pages:** Privacy Policy, Terms of Service, and Impressum are hosted centrally on [helvety.com](https://helvety.com) and linked in the site footer. An informational cookie notice informs visitors that only essential cookies are used (Swiss nDSG / EU ePrivacy compliant).
 
 ## Tech Stack
 
