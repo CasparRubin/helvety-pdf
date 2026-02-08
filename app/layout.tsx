@@ -2,7 +2,6 @@ import { Analytics } from "@vercel/analytics/next";
 import localFont from "next/font/local";
 
 import { AuthTokenHandler } from "@/components/auth-token-handler";
-import { CookieNotice } from "@/components/cookie-notice";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { SubscriptionProvider } from "@/components/subscription-provider";
@@ -142,7 +141,6 @@ export default function RootLayout({
                   {children}
                 </main>
                 <Footer className="shrink-0" />
-                <CookieNotice />
               </div>
               <Toaster />
             </SubscriptionProvider>
