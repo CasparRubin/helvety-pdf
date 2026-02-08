@@ -6,6 +6,7 @@
  */
 
 import { logger } from "@/lib/logger";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { createServerComponentClient } from "@/lib/supabase/client-factory";
 import {
   HELVETY_PDF_PRODUCT_ID,
@@ -35,6 +36,19 @@ export async function hasActiveSubscription(): Promise<
 
     if (!user) {
       return { success: true, data: false };
+    }
+
+    // Rate limit
+    const rateLimit = await checkRateLimit(
+      `pdf:user:${user.id}`,
+      RATE_LIMITS.API.maxRequests,
+      RATE_LIMITS.API.windowMs
+    );
+    if (!rateLimit.allowed) {
+      return {
+        success: false,
+        error: `Too many requests. Please wait ${rateLimit.retryAfter} seconds.`,
+      };
     }
 
     const { data, error } = await supabase
@@ -93,6 +107,19 @@ export async function getUserTier(): Promise<
           status: null,
           currentPeriodEnd: null,
         },
+      };
+    }
+
+    // Rate limit
+    const rateLimit = await checkRateLimit(
+      `pdf:user:${user.id}`,
+      RATE_LIMITS.API.maxRequests,
+      RATE_LIMITS.API.windowMs
+    );
+    if (!rateLimit.allowed) {
+      return {
+        success: false,
+        error: `Too many requests. Please wait ${rateLimit.retryAfter} seconds.`,
       };
     }
 
@@ -181,6 +208,19 @@ export async function getCurrentUser(): Promise<
 
     if (!user) {
       return { success: true, data: null };
+    }
+
+    // Rate limit
+    const rateLimit = await checkRateLimit(
+      `pdf:user:${user.id}`,
+      RATE_LIMITS.API.maxRequests,
+      RATE_LIMITS.API.windowMs
+    );
+    if (!rateLimit.allowed) {
+      return {
+        success: false,
+        error: `Too many requests. Please wait ${rateLimit.retryAfter} seconds.`,
+      };
     }
 
     return {
