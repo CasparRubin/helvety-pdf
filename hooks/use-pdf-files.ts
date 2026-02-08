@@ -34,9 +34,7 @@ interface UsePdfFilesOptions {
   onPageLimitReached?: () => void;
 }
 
-/**
- *
- */
+/** Return type of usePdfFiles: file state, page order, handlers, and cache access. */
 interface UsePdfFilesReturn {
   readonly pdfFiles: ReadonlyArray<PdfFile>;
   readonly setPdfFiles: React.Dispatch<React.SetStateAction<PdfFile[]>>;

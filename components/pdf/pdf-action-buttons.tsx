@@ -11,9 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-/**
- *
- */
+/** Single action button config (icon, handlers, label, optional title/description). */
 interface ActionButton {
   icon: React.ReactNode;
   onClick: () => void;
@@ -25,18 +23,14 @@ interface ActionButton {
   className?: string;
 }
 
-/**
- *
- */
+/** Props for the PDF action buttons toolbar (actions list, optional grip, className). */
 interface PdfActionButtonsProps {
   actions: ActionButton[];
   showGrip?: boolean;
   className?: string;
 }
 
-/**
- *
- */
+/** Renders a vertical toolbar of PDF action buttons with optional drag grip. */
 function PdfActionButtonsComponent({
   actions,
   showGrip = false,

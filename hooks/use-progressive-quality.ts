@@ -2,18 +2,14 @@ import * as React from "react";
 
 import { QUALITY_UPGRADE } from "@/lib/constants";
 
-/**
- *
- */
+/** Parameters for useProgressiveQuality: visibility, unmount flag, file type. */
 interface UseProgressiveQualityParams {
   readonly isVisible: boolean;
   readonly shouldUnmount: boolean;
   readonly fileType: "pdf" | "image";
 }
 
-/**
- *
- */
+/** Return type of useProgressiveQuality: quality state, setter, and cleanup refs. */
 interface UseProgressiveQualityReturn {
   readonly isHighQuality: boolean;
   readonly setIsHighQuality: React.Dispatch<React.SetStateAction<boolean>>;

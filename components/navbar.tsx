@@ -262,7 +262,6 @@ export function Navbar() {
                           "Rotate pages",
                           "All merge & split features",
                           "Client-side processing",
-                          "Priority support",
                         ].map((feature) => (
                           <li
                             key={feature}
@@ -436,7 +435,6 @@ export function Navbar() {
                             "Rotate pages",
                             "All merge & split features",
                             "Client-side processing",
-                            "Priority support",
                           ].map((feature) => (
                             <li
                               key={feature}

@@ -1,8 +1,6 @@
 import * as React from "react";
 
-/**
- *
- */
+/** Return type of useDragDrop: drag state and drag/drop event handlers. */
 interface UseDragDropReturn {
   readonly isDragging: boolean;
   readonly handleDragEnter: (e: React.DragEvent) => void;

@@ -13,9 +13,7 @@ import {
 
 import type { TierLimits } from "@/lib/types/subscription";
 
-/**
- *
- */
+/** Props for the upgrade prompt dialog (open, onOpenChange, reason, limits). */
 interface UpgradePromptProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,12 +41,9 @@ const PRO_FEATURES = [
   "Unlimited pages",
   "All merge & split features",
   "Client-side processing",
-  "Priority support",
 ];
 
-/**
- *
- */
+/** Dialog prompting the user to upgrade when file or page limits are reached. */
 export function UpgradePrompt({
   open,
   onOpenChange,

@@ -6,9 +6,7 @@ import * as React from "react";
 // Internal utilities
 import { ROTATION_ANGLES } from "@/lib/constants";
 
-/**
- *
- */
+/** Props for image-based PDF page thumbnail (fileUrl, pageNumber, rotation, callbacks). */
 interface PdfImageThumbnailProps {
   readonly fileUrl: string;
   readonly pageNumber: number;

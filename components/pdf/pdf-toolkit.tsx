@@ -398,7 +398,6 @@ function PdfToolkitComponent({
                         "Unlimited pages",
                         "All merge & split features",
                         "Client-side processing",
-                        "Priority support",
                       ].map((feature) => (
                         <li
                           key={feature}

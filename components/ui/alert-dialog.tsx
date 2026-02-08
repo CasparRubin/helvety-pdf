@@ -6,18 +6,14 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/**
- *
- */
+/** Alert dialog root component. */
 function AlertDialog({
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Root>): React.JSX.Element {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
 }
 
-/**
- *
- */
+/** Alert dialog trigger button. */
 function AlertDialogTrigger({
   ...props
 }: React.ComponentProps<
@@ -28,9 +24,7 @@ function AlertDialogTrigger({
   );
 }
 
-/**
- *
- */
+/** Alert dialog portal for rendering outside the DOM hierarchy. */
 function AlertDialogPortal({
   ...props
 }: React.ComponentProps<
@@ -41,9 +35,7 @@ function AlertDialogPortal({
   );
 }
 
-/**
- *
- */
+/** Alert dialog overlay backdrop. */
 function AlertDialogOverlay({
   className,
   ...props
@@ -62,9 +54,7 @@ function AlertDialogOverlay({
   );
 }
 
-/**
- *
- */
+/** Alert dialog content panel with overlay. */
 function AlertDialogContent({
   className,
   size = "default",
@@ -88,9 +78,7 @@ function AlertDialogContent({
   );
 }
 
-/**
- *
- */
+/** Alert dialog header section. */
 function AlertDialogHeader({
   className,
   ...props
@@ -107,9 +95,7 @@ function AlertDialogHeader({
   );
 }
 
-/**
- *
- */
+/** Alert dialog footer section for actions. */
 function AlertDialogFooter({
   className,
   ...props
@@ -126,9 +112,7 @@ function AlertDialogFooter({
   );
 }
 
-/**
- *
- */
+/** Alert dialog media/icon area. */
 function AlertDialogMedia({
   className,
   ...props
@@ -145,9 +129,7 @@ function AlertDialogMedia({
   );
 }
 
-/**
- *
- */
+/** Alert dialog title. */
 function AlertDialogTitle({
   className,
   ...props
@@ -164,9 +146,7 @@ function AlertDialogTitle({
   );
 }
 
-/**
- *
- */
+/** Alert dialog description text. */
 function AlertDialogDescription({
   className,
   ...props
@@ -185,9 +165,7 @@ function AlertDialogDescription({
   );
 }
 
-/**
- *
- */
+/** Alert dialog primary action button. */
 function AlertDialogAction({
   className,
   variant = "default",
@@ -209,9 +187,7 @@ function AlertDialogAction({
   );
 }
 
-/**
- *
- */
+/** Alert dialog cancel button. */
 function AlertDialogCancel({
   className,
   variant = "outline",

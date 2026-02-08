@@ -140,6 +140,3 @@ export function getRenderingCapabilities(): RenderingCapabilities {
       isOffscreenCanvasSupported() && isImageBitmapSupported(),
   };
 }
-
-// NOTE: getRenderingCapabilitiesDescription was removed as it was unused.
-// For debugging, use getRenderingCapabilities() directly and log the result.

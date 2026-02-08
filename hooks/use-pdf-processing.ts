@@ -25,18 +25,14 @@ import { withTimeout } from "@/lib/timeout-utils";
 // Types
 import type { PdfFile, UnifiedPage } from "@/lib/types";
 
-/**
- *
- */
+/** Return type of usePdfProcessing: isProcessing, extractPage, downloadMerged. */
 interface UsePdfProcessingReturn {
   readonly isProcessing: boolean;
   readonly extractPage: (unifiedPageNumber: number) => Promise<void>;
   readonly downloadMerged: () => Promise<void>;
 }
 
-/**
- *
- */
+/** Parameters for usePdfProcessing: file state, page order, rotations, getCachedPdf, onError. */
 interface UsePdfProcessingParams {
   readonly pdfFiles: ReadonlyArray<PdfFile>;
   readonly unifiedPages: ReadonlyArray<UnifiedPage>;

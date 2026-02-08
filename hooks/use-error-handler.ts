@@ -3,9 +3,7 @@ import { toast } from "sonner";
 
 import { TOAST_DURATIONS, CRITICAL_ERROR_PATTERNS } from "@/lib/constants";
 
-/**
- *
- */
+/** Return type of useErrorHandler: setError and dismissError. */
 interface UseErrorHandlerReturn {
   readonly setError: (error: string | null) => void;
   readonly dismissError: () => void;

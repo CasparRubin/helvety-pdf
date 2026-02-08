@@ -7,9 +7,7 @@ import * as React from "react";
 
 import { logger } from "@/lib/logger";
 
-/**
- *
- */
+/** Props for the PDF page error boundary (children, onError, retryKey). */
 interface PageErrorBoundaryProps {
   /** Child components to render */
   readonly children: React.ReactNode;
@@ -19,9 +17,7 @@ interface PageErrorBoundaryProps {
   readonly retryKey: number;
 }
 
-/**
- *
- */
+/** Internal state for the PDF page error boundary (hasError flag). */
 interface PageErrorBoundaryState {
   /** Whether an error has occurred */
   readonly hasError: boolean;

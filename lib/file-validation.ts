@@ -4,9 +4,6 @@
  * Uses magic number checks for additional security.
  */
 
-// Internal utilities
-// Note: FILE_LIMITS removed - no file size limits
-
 /**
  * PDF magic number (file signature): %PDF
  */

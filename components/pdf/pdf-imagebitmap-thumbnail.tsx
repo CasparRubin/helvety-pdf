@@ -8,9 +8,7 @@ import * as React from "react";
 import { ROTATION_ANGLES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-/**
- *
- */
+/** Props for ImageBitmap-based PDF thumbnail (imageBitmap, pageNumber, rotation, callbacks). */
 interface PdfImageBitmapThumbnailProps {
   /** ImageBitmap to render */
   imageBitmap: ImageBitmap;

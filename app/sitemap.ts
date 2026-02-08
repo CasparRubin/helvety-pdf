@@ -1,8 +1,6 @@
 import type { MetadataRoute } from "next";
 
-/**
- *
- */
+/** Generate the sitemap for the PDF app. */
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
