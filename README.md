@@ -78,7 +78,7 @@ Subscribe at [store.helvety.com](https://store.helvety.com/products/helvety-pdf)
 
 ### Authentication Flow
 
-Authentication is handled by the centralized Helvety Auth service (`auth.helvety.com`) using **email + passkey authentication** — no passwords required. **Login is optional** — users can use the PDF tool without an account. Login is only required for Pro subscription features.
+Authentication is handled by the centralized Helvety Auth service (`auth.helvety.com`) using **email + passkey authentication** with no passwords required. **Login is optional** and users can use the PDF tool without an account. Login is only required for Pro subscription features.
 
 **New Users (when signing in):**
 
