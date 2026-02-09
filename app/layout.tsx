@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 
 import { AuthTokenHandler } from "@/components/auth-token-handler";
 import { Footer } from "@/components/footer";
-import { GeoRestrictionDialog } from "@/components/geo-restriction-dialog";
 import { Navbar } from "@/components/navbar";
 import { SubscriptionProvider } from "@/components/subscription-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -115,7 +114,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Root layout: sticky header (Navbar), scrollable main (PDF toolkit), sticky footer (contact + legal links).
+ * Root layout: fixed header (Navbar), overflow-hidden main (PDF toolkit manages its own scroll), fixed footer.
  */
 export default function RootLayout({
   children,
@@ -131,23 +130,21 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <GeoRestrictionDialog>
-            <AuthTokenHandler />
-            <TooltipProvider>
-              <SubscriptionProvider>
-                <div className="flex h-screen flex-col overflow-hidden">
-                  <header className="shrink-0">
-                    <Navbar />
-                  </header>
-                  <main className="min-h-0 flex-1 overflow-hidden">
-                    {children}
-                  </main>
-                  <Footer className="shrink-0" />
-                </div>
-                <Toaster />
-              </SubscriptionProvider>
-            </TooltipProvider>
-          </GeoRestrictionDialog>
+          <AuthTokenHandler />
+          <TooltipProvider>
+            <SubscriptionProvider>
+              <div className="flex h-screen flex-col overflow-hidden">
+                <header className="shrink-0">
+                  <Navbar />
+                </header>
+                <main className="min-h-0 flex-1 overflow-hidden">
+                  {children}
+                </main>
+                <Footer className="shrink-0" />
+              </div>
+              <Toaster />
+            </SubscriptionProvider>
+          </TooltipProvider>
         </ThemeProvider>
         <Analytics />
       </body>
