@@ -94,7 +94,12 @@ export const metadata: Metadata = {
     title: "Helvety PDF | Comprehensive PDF Tool | Private and Secure",
     description:
       "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser.",
-    images: ["/helvety_Identifier_whiteBg.svg"],
+    images: [
+      {
+        url: "/helvety_Identifier_whiteBg.svg",
+        alt: "Helvety PDF",
+      },
+    ],
   },
   robots: {
     index: true,

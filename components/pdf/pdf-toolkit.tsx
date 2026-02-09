@@ -393,18 +393,17 @@ function PdfToolkitComponent({
                       Upgrade to Pro
                     </h4>
                     <ul className="mb-3 space-y-1">
-                      {[
-                        "Unlimited file uploads",
-                        "Unlimited pages",
-                      ].map((feature) => (
-                        <li
-                          key={feature}
-                          className="flex items-center gap-2 text-xs"
-                        >
-                          <Check className="text-primary h-3 w-3 shrink-0" />
-                          {feature}
-                        </li>
-                      ))}
+                      {["Unlimited file uploads", "Unlimited pages"].map(
+                        (feature) => (
+                          <li
+                            key={feature}
+                            className="flex items-center gap-2 text-xs"
+                          >
+                            <Check className="text-primary h-3 w-3 shrink-0" />
+                            {feature}
+                          </li>
+                        )
+                      )}
                     </ul>
                     <p className="text-muted-foreground mb-3 text-xs">
                       Only{" "}

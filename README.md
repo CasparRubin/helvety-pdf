@@ -55,6 +55,7 @@ As a Swiss company, Helvety operates solely under the Swiss Federal Act on Data 
 - **Drag & drop upload** - Intuitive file upload interface
 - **Customizable grid layout** - Adjust pages per row to accommodate different page sizes
 - **Dark & Light mode support** - Comfortable viewing in any lighting condition
+- **App Switcher** - Navigate between Helvety ecosystem apps (Home, Auth, Store, PDF, Tasks, Contacts)
 
 ## Pricing
 
@@ -97,7 +98,7 @@ Sessions are shared across all `*.helvety.com` subdomains via cookie-based SSO.
 
 **Privacy Note:** Your email address is used solely for authentication (verification codes for new users, passkey for returning) and account recovery. We do not share your email with third parties for marketing purposes.
 
-**Note:** End-to-end encryption is not used in this app. E2EE is only used by [Helvety Tasks](https://tasks.helvety.com).
+**Note:** End-to-end encryption is not used in this app. E2EE is used by [Helvety Tasks](https://tasks.helvety.com) and [Helvety Contacts](https://contacts.helvety.com).
 
 ### Security Hardening
 
@@ -113,6 +114,8 @@ This application implements comprehensive security hardening:
 - **Security Headers** - CSP, HSTS, and other security headers
 
 **Legal Pages:** Privacy Policy, Terms of Service, and Impressum are hosted centrally on [helvety.com](https://helvety.com) and linked in the site footer. Services are exclusively available to customers in Switzerland and are not offered to EU/EEA residents; new users must confirm they are located in Switzerland during account creation on [auth.helvety.com](https://auth.helvety.com) (before any personal data is stored). Only the Swiss Federal Act on Data Protection (nDSG) applies; the GDPR does not apply. An informational cookie notice informs visitors that only essential cookies are used.
+
+**Abuse Reporting:** Abuse reports can be submitted to [abuse@helvety.com](mailto:abuse@helvety.com). The Impressum on [helvety.com/impressum](https://helvety.com/impressum#abuse) includes a dedicated abuse reporting section with guidance for both users and law enforcement.
 
 ## Tech Stack
 

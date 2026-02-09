@@ -1,11 +1,11 @@
 "use client";
 
-import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import { Tooltip as TooltipPrimitive } from "radix-ui";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-/** Tooltip provider context. */
+/** Tooltip provider for configuring tooltip behavior. */
 function TooltipProvider({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
@@ -33,7 +33,7 @@ function TooltipPortal({
   return <TooltipPrimitive.Portal data-slot="tooltip-portal" {...props} />;
 }
 
-/** Tooltip content panel. */
+/** Tooltip content popup with animations. */
 function TooltipContent({
   className,
   ...props

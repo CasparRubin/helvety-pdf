@@ -143,16 +143,14 @@ export function createPageActions(
     // Rotate buttons
     {
       icon: <RotateCw className="h-4 w-4" />,
-      onClick: () =>
-        onRotate(unifiedPageNumber, ROTATION_ANGLES.INCREMENT),
+      onClick: () => onRotate(unifiedPageNumber, ROTATION_ANGLES.INCREMENT),
       ariaLabel: `Rotate page ${unifiedPageNumber} 90° clockwise`,
       title: "Rotate 90° clockwise",
       disabled: isProcessing,
     },
     {
       icon: <RotateCcw className="h-4 w-4" />,
-      onClick: () =>
-        onRotate(unifiedPageNumber, -ROTATION_ANGLES.INCREMENT),
+      onClick: () => onRotate(unifiedPageNumber, -ROTATION_ANGLES.INCREMENT),
       ariaLabel: `Rotate page ${unifiedPageNumber} 90° counter-clockwise`,
       title: "Rotate 90° counter-clockwise",
       disabled: isProcessing,
