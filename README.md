@@ -40,7 +40,7 @@ Helvety PDF is a 100% free tool with no limits and no login required. All featur
 
 Helvety services are intended exclusively for customers located in Switzerland. **We are not able to serve customers in the EU/EEA.**
 
-As a Swiss company, Helvety operates solely under the Swiss Federal Act on Data Protection (nDSG). Because we do not target or serve customers in the EU/EEA, the GDPR does not apply. For this reason, new users are asked to confirm during account creation on [auth.helvety.com](https://auth.helvety.com) that they are located in Switzerland before any personal data is stored.
+As a Swiss company, Helvety operates solely under the Swiss Federal Act on Data Protection (nDSG). Because we do not target or serve customers in the EU/EEA, the GDPR does not apply. For this reason, new users are asked to confirm during account creation on [auth.helvety.com](https://auth.helvety.com) that they are located in Switzerland before any personal data is stored. Note: Helvety PDF itself requires no login or account - this applies to other Helvety apps that require authentication.
 
 ## Features
 
