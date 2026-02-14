@@ -2,6 +2,7 @@
  * File validation utilities for PDFs and images.
  * Provides consistent validation logic and error messages.
  * Uses magic number checks for additional security.
+ * Enforces maximum file size (100MB).
  */
 
 /**
@@ -100,7 +101,8 @@ const VALID_IMAGE_MIME_TYPES = new Set<string>([
   "image/webp",
   "image/bmp",
   "image/tiff",
-  "image/svg+xml",
+  // SVG intentionally excluded: SVGs can contain <script> tags, onload handlers,
+  // and external entity references which create XSS risks when rendered.
 ]);
 
 /**
@@ -120,7 +122,7 @@ const VALID_IMAGE_EXTENSIONS = new Set<string>([
   ".bmp",
   ".tiff",
   ".tif",
-  ".svg",
+  // .svg intentionally excluded (XSS risk — see VALID_IMAGE_MIME_TYPES comment)
 ]);
 
 /**
@@ -329,13 +331,14 @@ export function validateFileType(
 
   return {
     valid: false,
-    error: `'${file.name}' is not a supported file type. Please upload a PDF or image file (JPEG, PNG, GIF, WebP, BMP, TIFF, or SVG).`,
+    error: `'${file.name}' is not a supported file type. Please upload a PDF or image file (JPEG, PNG, GIF, WebP, BMP, or TIFF).`,
   };
 }
 
+const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100MB
+
 /**
- * Validates file size - only checks if file is empty.
- * No maximum size limit - users can try any size file.
+ * Validates file size - checks max size and empty files.
  *
  * @param file - The file to validate
  * @returns Object with validation result and error message if invalid
@@ -343,6 +346,13 @@ export function validateFileType(
 export function validateFileSize(
   file: File
 ): Readonly<{ valid: boolean; error?: string }> {
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return {
+      valid: false,
+      error: `File exceeds maximum size of 100MB.`,
+    };
+  }
+
   if (file.size === 0) {
     return {
       valid: false,

@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     template: "%s | Helvety PDF",
   },
   description:
-    "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free with no limits.",
+    "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free, up to 100MB per file.",
   keywords: [
     "Helvety PDF",
     "PDF merge",
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     siteName: "Helvety PDF",
     title: "Helvety PDF | Free PDF Tool | Private and Secure",
     description:
-      "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free with no limits.",
+      "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free, up to 100MB per file.",
     images: [
       {
         url: "/helvety_Identifier_whiteBg.svg",
@@ -95,7 +95,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "Helvety PDF | Free PDF Tool | Private and Secure",
     description:
-      "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free with no limits.",
+      "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free, up to 100MB per file.",
     images: [
       {
         url: "/helvety_Identifier_whiteBg.svg",

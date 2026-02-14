@@ -34,7 +34,7 @@ A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract 
 
 **Privacy First** - 100% Client-Side Processing. All file processing happens entirely in your browser. Your file data is never uploaded to our servers. We use Vercel Analytics for anonymous page view statistics only (see [Privacy Policy](https://helvety.com/privacy)).
 
-Helvety PDF is a 100% free tool with no limits and no login required. All features are available to everyone - unlimited files, unlimited pages.
+Helvety PDF is a 100% free tool with no login required. All features are available to everyone - unlimited files, unlimited pages, up to 100MB per file.
 
 ## Service Availability
 
@@ -56,7 +56,7 @@ As a Swiss company, Helvety operates solely under the Swiss Federal Act on Data 
 - **Customizable grid layout** - Adjust pages per row to accommodate different page sizes
 - **Dark & Light mode support** - Switch between dark and light themes
 - **App Switcher** - Navigate between Helvety ecosystem apps (Home, Auth, Store, PDF, Tasks, Contacts)
-- **Unlimited files and pages** - No restrictions, completely free
+- **Unlimited files and pages** - Up to 100MB per file, no limit on number of files or pages
 - **No login required** - Use the tool instantly, no account needed
 
 ## How It Works
@@ -74,6 +74,9 @@ As a Swiss company, Helvety operates solely under the Swiss Federal Act on Data 
 This application includes the following security hardening:
 
 - **Security Headers** - CSP, HSTS, and other security headers
+- **Rate Limiting** - Auth callback rate limited by IP to prevent abuse
+- **File Size Validation** - Maximum 100MB per file enforced client-side
+- **Redirect URI Validation** - All redirect URIs validated against allowlist
 
 **Legal Pages:** Privacy Policy, Terms of Service, and Impressum are hosted centrally on [helvety.com](https://helvety.com) and linked in the site footer. Services are exclusively available to customers in Switzerland and are not offered to EU/EEA residents; new users must confirm they are located in Switzerland during account creation on [auth.helvety.com](https://auth.helvety.com) (before any personal data is stored). Only the Swiss Federal Act on Data Protection (nDSG) applies; the GDPR does not apply. An informational cookie notice informs visitors that only essential cookies are used.
 

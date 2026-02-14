@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getLoginUrl } from "@/lib/auth-redirect";
 import { logger } from "@/lib/logger";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { getSafeRelativePath } from "@/lib/redirect-validation";
 import { createServerClient } from "@/lib/supabase/server";
 
@@ -18,8 +19,26 @@ import type { EmailOtpType } from "@supabase/supabase-js";
  *
  * Security: The `next` parameter is validated to prevent open redirect attacks.
  * Only relative paths starting with "/" are allowed.
+ * Rate limited by IP to prevent auth callback abuse.
  */
 export async function GET(request: Request) {
+  // Rate limit auth callbacks by IP to prevent abuse
+  // Prefer x-real-ip (Vercel-trusted) over x-forwarded-for (spoofable)
+  const clientIP =
+    request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown";
+  const rateLimit = await checkRateLimit(
+    `auth_callback:ip:${clientIP}`,
+    RATE_LIMITS.AUTH_CALLBACK.maxRequests,
+    RATE_LIMITS.AUTH_CALLBACK.windowMs
+  );
+  if (!rateLimit.allowed) {
+    return NextResponse.redirect(
+      `${new URL(request.url).origin}/login?error=rate_limited`
+    );
+  }
+
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const token_hash = searchParams.get("token_hash");

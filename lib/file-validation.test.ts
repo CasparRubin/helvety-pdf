@@ -63,9 +63,9 @@ describe("isImageFile", () => {
     expect(isImageFile(file)).toBe(true);
   });
 
-  it("returns true for SVG files", () => {
+  it("returns false for SVG files (excluded for XSS safety)", () => {
     const file = createMockFile("icon.svg", "image/svg+xml");
-    expect(isImageFile(file)).toBe(true);
+    expect(isImageFile(file)).toBe(false);
   });
 
   it("returns false for PDF files", () => {
@@ -123,8 +123,9 @@ describe("isValidImageFileSync", () => {
     expect(isValidImageFileSync(createMockFile("a.webp", "image/webp"))).toBe(
       true
     );
+    // SVG excluded for XSS safety
     expect(isValidImageFileSync(createMockFile("a.svg", "image/svg+xml"))).toBe(
-      true
+      false
     );
   });
 

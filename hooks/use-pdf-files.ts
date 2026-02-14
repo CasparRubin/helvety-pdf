@@ -183,7 +183,7 @@ function createUnifiedPages(files: ReadonlyArray<PdfFile>): UnifiedPage[] {
 /**
  * Custom hook for managing PDF files and their associated state.
  * Handles file validation, caching, and unified page management.
- * No file or page limits - completely free and unlimited.
+ * No file count or page limits - completely free, up to 100MB per file.
  *
  * @returns Object containing file state, handlers, and utilities
  */

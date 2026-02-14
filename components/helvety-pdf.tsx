@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
  * - Merge all pages into a single PDF
  *
  * All processing happens client-side for privacy and security.
- * Completely free with no limits and no login required.
+ * Completely free (up to 100MB per file) and no login required.
  *
  * @returns The main PDF toolkit interface
  */
@@ -32,7 +32,7 @@ export function HelvetyPdf(): React.JSX.Element {
   const [columns, handleColumnsChange] = useColumns();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // PDF files management (no limits)
+  // PDF files management (up to 100MB per file)
   const {
     pdfFiles,
     unifiedPages,
