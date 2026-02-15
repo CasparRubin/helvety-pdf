@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
   // Security headers
   async headers() {
     const isDevelopment = process.env.NODE_ENV === "development";
+    const cspReportEndpoint = "/api/csp-report";
 
     // Build headers array
     const headers = [
@@ -55,6 +56,18 @@ const nextConfig: NextConfig = {
         value: "camera=(), microphone=(), geolocation=()",
       },
       {
+        key: "Reporting-Endpoints",
+        value: `csp="${cspReportEndpoint}"`,
+      },
+      {
+        key: "Report-To",
+        value: JSON.stringify({
+          group: "csp-endpoint",
+          max_age: 10886400,
+          endpoints: [{ url: cspReportEndpoint }],
+        }),
+      },
+      {
         key: "Content-Security-Policy",
         // Note on 'unsafe-eval' and 'unsafe-inline':
         // - 'unsafe-eval': Required for PDF.js to parse and render PDF documents.
@@ -76,6 +89,9 @@ const nextConfig: NextConfig = {
           "base-uri 'self'",
           "form-action 'self'",
           "frame-ancestors 'self'",
+          "script-src-attr 'none'",
+          `report-uri ${cspReportEndpoint}`,
+          "report-to csp-endpoint",
           ...(isDevelopment ? [] : ["upgrade-insecure-requests"]),
         ].join("; "),
       },

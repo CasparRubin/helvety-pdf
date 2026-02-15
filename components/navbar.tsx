@@ -144,7 +144,7 @@ export function Navbar({ initialUser = null }: { initialUser?: User | null }) {
               loading="eager"
             />
             <Image
-              src="/helvety_Identifier_whiteBg.svg"
+              src="/helvety_identifier_whiteBg.svg"
               alt="Helvety"
               width={30}
               height={30}
@@ -185,7 +185,7 @@ export function Navbar({ initialUser = null }: { initialUser?: User | null }) {
                     Privacy-focused, client-side PDF toolkit for merging,
                     reordering, rotating, and extracting pages. All processing
                     happens locally in your browser. Free to use, up to 100MB
-                    per file.
+                    per file. Engineered & Designed in Switzerland.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="border-t" />

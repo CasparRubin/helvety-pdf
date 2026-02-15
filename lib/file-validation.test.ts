@@ -103,6 +103,16 @@ describe("isValidPdfFileSync", () => {
     const file = createMockFile("test.txt", "text/plain");
     expect(isValidPdfFileSync(file)).toBe(false);
   });
+
+  it("accepts uppercase .PDF extension with empty MIME type", () => {
+    const file = createMockFile("test.PDF", "");
+    expect(isValidPdfFileSync(file)).toBe(true);
+  });
+
+  it("rejects file with no extension and non-PDF MIME type", () => {
+    const file = createMockFile("myfile", "text/plain");
+    expect(isValidPdfFileSync(file)).toBe(false);
+  });
 });
 
 // =============================================================================
@@ -191,6 +201,20 @@ describe("validateFileType", () => {
     expect(result.valid).toBe(false);
     expect(result.error).toContain("MIME type");
   });
+
+  it("rejects double extensions disguising file type", () => {
+    const result = validateFileType(
+      createMockFile("report.pdf.exe", "application/octet-stream")
+    );
+    expect(result.valid).toBe(false);
+  });
+
+  it("rejects file with empty filename", () => {
+    const result = validateFileType(
+      createMockFile("", "application/octet-stream")
+    );
+    expect(result.valid).toBe(false);
+  });
 });
 
 // =============================================================================
@@ -211,5 +235,12 @@ describe("validateFileSize", () => {
     );
     expect(result.valid).toBe(false);
     expect(result.error).toContain("empty");
+  });
+
+  it("accepts files at 1 byte (minimum valid size)", () => {
+    const result = validateFileSize(
+      createMockFile("tiny.pdf", "application/pdf", 1)
+    );
+    expect(result.valid).toBe(true);
   });
 });

@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     template: "%s | Helvety PDF",
   },
   description:
-    "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free, up to 100MB per file.",
+    "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free, up to 100MB per file. Engineered & Designed in Switzerland.",
   keywords: [
     "Helvety PDF",
     "PDF merge",
@@ -69,10 +69,6 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  icons: {
-    icon: [{ url: "/helvety_Identifier_whiteBg.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/helvety_Identifier_whiteBg.svg", type: "image/svg+xml" }],
-  },
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
@@ -81,10 +77,10 @@ export const metadata: Metadata = {
     siteName: "Helvety PDF",
     title: "Helvety PDF | Free PDF Tool | Private and Secure",
     description:
-      "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free, up to 100MB per file.",
+      "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free, up to 100MB per file. Engineered & Designed in Switzerland.",
     images: [
       {
-        url: "/helvety_Identifier_whiteBg.svg",
+        url: "/helvety_identifier_whiteBg.png",
         width: 500,
         height: 500,
         alt: "Helvety PDF",
@@ -95,10 +91,10 @@ export const metadata: Metadata = {
     card: "summary",
     title: "Helvety PDF | Free PDF Tool | Private and Secure",
     description:
-      "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free, up to 100MB per file.",
+      "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser. Private, secure, and 100% free, up to 100MB per file. Engineered & Designed in Switzerland.",
     images: [
       {
-        url: "/helvety_Identifier_whiteBg.svg",
+        url: "/helvety_identifier_whiteBg.png",
         alt: "Helvety PDF",
       },
     ],
@@ -140,6 +136,46 @@ export default async function RootLayout({
   return (
     <html lang="en" className={publicSans.variable} suppressHydrationWarning>
       <body className="antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                name: "Helvety",
+                url: "https://helvety.com",
+                logo: "https://helvety.com/helvety_identifier_whiteBg.png",
+                description:
+                  "Software and subscriptions engineered and designed in Switzerland.",
+                sameAs: [
+                  "https://helvety.com",
+                  "https://store.helvety.com",
+                  "https://auth.helvety.com",
+                  "https://contacts.helvety.com",
+                  "https://tasks.helvety.com",
+                  "https://github.com/CasparRubin",
+                ],
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "WebApplication",
+                name: "Helvety PDF",
+                url: "https://pdf.helvety.com",
+                description:
+                  "Manage PDF files with ease. Merge, reorder, delete, rotate, and extract PDF pages - all in one place. All processing happens locally in your browser.",
+                applicationCategory: "UtilitiesApplication",
+                operatingSystem: "Any",
+                offers: {
+                  "@type": "Offer",
+                  price: "0",
+                  priceCurrency: "USD",
+                },
+                browserRequirements: "Requires a modern web browser",
+              },
+            ]),
+          }}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

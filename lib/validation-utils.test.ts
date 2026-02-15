@@ -43,6 +43,18 @@ describe("validateNonNegativeInteger", () => {
       "Invalid index"
     );
   });
+
+  it("rejects undefined", () => {
+    expect(() => validateNonNegativeInteger(undefined, "index")).toThrow(
+      "Invalid index"
+    );
+  });
+
+  it("accepts Number.MAX_SAFE_INTEGER", () => {
+    expect(() =>
+      validateNonNegativeInteger(Number.MAX_SAFE_INTEGER, "index")
+    ).not.toThrow();
+  });
 });
 
 // =============================================================================
@@ -130,5 +142,26 @@ describe("generateUniqueFileName", () => {
   it("handles files without extension", () => {
     const existing = [mockPdfFile("README")];
     expect(generateUniqueFileName("README", existing)).toBe("README_2");
+  });
+
+  it("handles filenames with spaces", () => {
+    const existing = [mockPdfFile("my report.pdf")];
+    expect(generateUniqueFileName("my report.pdf", existing)).toBe(
+      "my report_2.pdf"
+    );
+  });
+
+  it("handles filenames with multiple dots", () => {
+    const existing = [mockPdfFile("report.v2.pdf")];
+    expect(generateUniqueFileName("report.v2.pdf", existing)).toBe(
+      "report.v2_2.pdf"
+    );
+  });
+
+  it("handles filenames with unicode characters", () => {
+    const existing = [mockPdfFile("bericht_über.pdf")];
+    expect(generateUniqueFileName("bericht_über.pdf", existing)).toBe(
+      "bericht_über_2.pdf"
+    );
   });
 });

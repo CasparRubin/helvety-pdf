@@ -5,7 +5,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
-A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract pages from PDF files and images with 100% client-side processing. All file processing happens entirely in your browser - your files are never uploaded to our servers.
+A privacy-focused, client-side PDF toolkit. Merge, reorder, rotate, and extract pages from PDF files and images with 100% client-side processing. All file processing happens entirely in your browser - your files are never uploaded to our servers. Engineered & Designed in Switzerland.
 
 **App:** [pdf.helvety.com](https://pdf.helvety.com)
 
@@ -59,6 +59,20 @@ This application includes the following security hardening:
 
 **Abuse Reporting:** Abuse reports can be submitted to [contact@helvety.com](mailto:contact@helvety.com). The Impressum on [helvety.com/impressum](https://helvety.com/impressum#abuse) includes an abuse reporting section with guidance for both users and law enforcement.
 
+## Environment Variables
+
+Copy `env.template` to `.env.local` and fill in values. All `NEXT_PUBLIC_*` vars are exposed to the client; others are server-only.
+
+| Variable                               | Required | Server-only | Description                                  |
+| -------------------------------------- | -------- | ----------- | -------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Yes      | No          | Supabase project URL (auth callback)         |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes      | No          | Anon key (RLS applies)                       |
+| `NEXT_PUBLIC_*` URLs                   | No       | No          | Cross-app URLs; have sensible defaults       |
+| `UPSTASH_REDIS_REST_URL`               | Prod     | **Yes**     | Redis URL for rate limiting. Prod: required. |
+| `UPSTASH_REDIS_REST_TOKEN`             | Prod     | **Yes**     | Redis token. Prod: required.                 |
+
+> **Note:** Make sure `NEXT_PUBLIC_APP_URL` is in your Supabase Redirect URLs allowlist (Supabase Dashboard > Authentication > URL Configuration > Redirect URLs).
+
 ## Tech Stack
 
 This project is built with modern web technologies:
@@ -85,6 +99,18 @@ This application is built with performance and code quality in mind:
 - **Strict TypeScript** - Strict type safety with `noUncheckedIndexedAccess`, `noImplicitReturns`, `noUnusedLocals`, and other strict compiler options
 - **Error Handling** - Centralized error handling with detailed context and recovery strategies
 - **Code Organization** - Modular architecture with extracted utilities and reusable components
+
+## Testing
+
+Unit tests are written with [Vitest](https://vitest.dev/) and run in a jsdom environment with type-checking enabled.
+
+| Script                  | Description                       |
+| ----------------------- | --------------------------------- |
+| `npm test`              | Run all tests once                |
+| `npm run test:watch`    | Run tests in watch mode           |
+| `npm run test:coverage` | Run tests with v8 coverage report |
+
+Test files follow the `**/*.test.{ts,tsx}` pattern and live next to the source they test.
 
 ## Developer
 
