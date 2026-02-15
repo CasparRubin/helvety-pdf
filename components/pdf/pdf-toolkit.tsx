@@ -1,19 +1,8 @@
 "use client";
 
-import { Download, Loader2, Trash2, X, Upload } from "lucide-react";
+import { X } from "lucide-react";
 import * as React from "react";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -30,40 +19,31 @@ interface PdfToolkitProps {
   readonly totalPages: number;
   readonly deletedCount: number;
   readonly rotatedCount: number;
-  readonly onDownload: () => void;
-  readonly onClearAll: () => void;
   readonly onRemoveFile: (fileId: string) => void;
-  readonly onAddFiles: () => void;
-  readonly isProcessing: boolean;
   readonly columns?: number;
   readonly onColumnsChange?: (columns: number) => void;
 }
 
-/** Tailwind lg breakpoint in pixels */
-const LG_BREAKPOINT = 1024;
-
-/** PDF toolkit panel with actions, statistics, and file management */
+/**
+ * PDF toolkit panel with display settings, statistics, and file management.
+ * Desktop only (hidden on stacked/mobile layout via parent).
+ * Actions (add files, download, clear all) are handled by the command bar.
+ */
 function PdfToolkitComponent({
   pdfFiles,
   totalPages,
   deletedCount,
   rotatedCount,
-  onDownload,
-  onClearAll,
   onRemoveFile,
-  onAddFiles,
-  isProcessing,
   columns,
   onColumnsChange,
 }: PdfToolkitProps): React.JSX.Element {
   const [showColumnSlider, setShowColumnSlider] = React.useState(false);
-  const [isStackedLayout, setIsStackedLayout] = React.useState(false);
 
-  // Detect screen width for responsive behavior
+  // Detect screen width for column slider visibility
   React.useEffect(() => {
     const checkScreenWidth = (): void => {
       setShowColumnSlider(window.innerWidth >= BREAKPOINTS.MULTI_COLUMN);
-      setIsStackedLayout(window.innerWidth < LG_BREAKPOINT);
     };
 
     // Check on mount
@@ -74,89 +54,6 @@ function PdfToolkitComponent({
     return () => window.removeEventListener("resize", checkScreenWidth);
   }, []);
 
-  // Stacked layout: compact buttons only (mobile/tablet)
-  if (isStackedLayout) {
-    return (
-      <div className="w-full flex-shrink-0">
-        <div className="bg-muted/30 border-border/50 border p-3">
-          <div className="flex items-center justify-between gap-2">
-            {/* Left side: Add Files, Clear All */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                onClick={onAddFiles}
-                disabled={isProcessing}
-                variant="outline"
-                size="default"
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                {pdfFiles.length === 0 ? "Add Files" : "Add More"}
-              </Button>
-              {pdfFiles.length > 0 && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      disabled={isProcessing || pdfFiles.length === 0}
-                      variant="outline"
-                      size="default"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Clear All
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Clear All Files?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will remove all files and pages from the canvas.
-                        This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={onClearAll}
-                        variant="destructive"
-                      >
-                        Clear All
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
-
-            {/* Right side: Download */}
-            {pdfFiles.length > 0 && (
-              <Button
-                onClick={onDownload}
-                disabled={isProcessing || pdfFiles.length === 0}
-                size="default"
-                aria-label={
-                  isProcessing
-                    ? "Processing PDF, please wait"
-                    : `Download merged PDF with ${totalPages} page${totalPages !== 1 ? "s" : ""}`
-                }
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Desktop layout: full panel (only shown on lg+ screens)
   return (
     <div
       className={cn(
@@ -173,84 +70,6 @@ function PdfToolkitComponent({
           "flex-1 overflow-y-auto"
         )}
       >
-        {/* Actions - Always at top */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Actions</h3>
-          <div className="space-y-2">
-            {pdfFiles.length > 0 && (
-              <Button
-                onClick={onDownload}
-                disabled={isProcessing || pdfFiles.length === 0}
-                className="w-full"
-                size="lg"
-                aria-label={
-                  isProcessing
-                    ? "Processing PDF, please wait"
-                    : `Download merged PDF with ${totalPages} page${totalPages !== 1 ? "s" : ""}`
-                }
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                  </>
-                )}
-              </Button>
-            )}
-            <Button
-              onClick={onAddFiles}
-              disabled={isProcessing}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              {pdfFiles.length === 0 ? "Add Files" : "Add More Files"}
-            </Button>
-            <p className="text-muted-foreground text-center text-xs">
-              PDF files and images are supported
-            </p>
-            {pdfFiles.length > 0 && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    disabled={isProcessing || pdfFiles.length === 0}
-                    variant="outline"
-                    className="w-full"
-                    size="lg"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Clear All
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Clear All Files?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will remove all files and pages from the canvas. This
-                      action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={onClearAll}
-                      variant="destructive"
-                    >
-                      Clear All
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
-        </div>
-
         {/* Display - Column Slider (only show when screen width >= 1231px and files are uploaded) */}
         {pdfFiles.length > 0 &&
           showColumnSlider &&
@@ -350,7 +169,6 @@ function PdfToolkitComponent({
                     size="icon"
                     className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                     onClick={() => onRemoveFile(file.id)}
-                    disabled={isProcessing}
                     aria-label={`Remove ${file.file.name}`}
                   >
                     <X className="h-3 w-3" />
@@ -375,7 +193,6 @@ function arePropsEqual(
 ): boolean {
   // Compare primitive values first (fastest check)
   if (
-    prevProps.isProcessing !== nextProps.isProcessing ||
     prevProps.columns !== nextProps.columns ||
     prevProps.totalPages !== nextProps.totalPages ||
     prevProps.deletedCount !== nextProps.deletedCount ||
@@ -408,10 +225,7 @@ function arePropsEqual(
   // Compare function references (if they're stable, this is fine)
   // If functions changed, we want to re-render anyway
   return (
-    prevProps.onDownload === nextProps.onDownload &&
-    prevProps.onClearAll === nextProps.onClearAll &&
     prevProps.onRemoveFile === nextProps.onRemoveFile &&
-    prevProps.onAddFiles === nextProps.onAddFiles &&
     prevProps.onColumnsChange === nextProps.onColumnsChange
   );
 }
